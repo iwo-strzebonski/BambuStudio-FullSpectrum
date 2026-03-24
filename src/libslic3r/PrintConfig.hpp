@@ -1413,8 +1413,22 @@ PRINT_CONFIG_CLASS_DERIVED_DEFINE(
     ((ConfigOptionFloats,             filament_tower_ironing_area))
     ((ConfigOptionFloats,             filament_tower_interface_purge_volume))
     ((ConfigOptionInts,               filament_tower_interface_print_temp))
-    ((ConfigOptionBool,               enable_tower_interface_features)))
-// This object is mapped to Perl as Slic3r::Config::Full.
+    ((ConfigOptionBool,               enable_tower_interface_features))
+    // FullSpectrum: mixed filament / dithering options
+    ((ConfigOptionFloat,              mixed_color_layer_height_a))
+    ((ConfigOptionFloat,              mixed_color_layer_height_b))
+    ((ConfigOptionBool,               mixed_filament_gradient_mode))
+    ((ConfigOptionFloat,              mixed_filament_height_lower_bound))
+    ((ConfigOptionFloat,              mixed_filament_height_upper_bound))
+    ((ConfigOptionBool,               mixed_filament_advanced_dithering))
+    ((ConfigOptionFloat,              mixed_filament_pointillism_pixel_size))
+    ((ConfigOptionFloat,              mixed_filament_pointillism_line_gap))
+    ((ConfigOptionFloat,              mixed_filament_surface_indentation))
+    ((ConfigOptionString,             mixed_filament_definitions))
+    ((ConfigOptionFloat,              dithering_z_step_size))
+    ((ConfigOptionBool,               dithering_local_z_mode))
+    ((ConfigOptionBool,               dithering_step_painted_zones_only))
+)// This object is mapped to Perl as Slic3r::Config::Full.
 PRINT_CONFIG_CLASS_DERIVED_DEFINE0(
     FullPrintConfig,
     (PrintObjectConfig, PrintRegionConfig, PrintConfig)

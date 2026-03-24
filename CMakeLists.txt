@@ -5,7 +5,7 @@ if ( ((MSVC) OR (WIN32)) AND (${CMAKE_VERSION} VERSION_GREATER_EQUAL "4.0") )
     message(FATAL_ERROR "Only cmake versions between 3.13.x and 4.0.x is supported on windows. Detected version: ${CMAKE_VERSION}")
 endif()
 
-project(BambuStudio)
+project(BambuStudio-FullSpectrum)
 
 include("version.inc")
 include(GNUInstallDirs)

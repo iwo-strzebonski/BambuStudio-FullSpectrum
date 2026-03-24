@@ -3,6 +3,7 @@
 
 #include "Preset.hpp"
 #include "AppConfig.hpp"
+#include "MixedFilament.hpp"
 #include "enum_bitmask.hpp"
 
 #include <memory>
@@ -220,6 +221,10 @@ public:
 
     std::vector<std::map<int, int>> extruder_ams_counts;
     ExtruderNozzleStat extruder_nozzle_stat;
+
+    // Mixed (virtual) filaments for layer-based colour mixing.
+    MixedFilamentManager        mixed_filaments;
+
     // Calibrate
     Preset const * calibrate_printer = nullptr;
     std::set<Preset const *> calibrate_filaments;
@@ -312,7 +317,23 @@ public:
 
     // Read out the number of extruders from an active printer preset,
     // update size and content of filament_presets.
-    void                        update_multi_material_filament_presets(size_t to_delete_filament_id = size_t(-1));
+    void                        update_multi_material_filament_presets(size_t to_delete_filament_id = size_t(-1),
+                                                                       size_t old_num_filaments = size_t(-1));
+
+    // Rebuild old->new virtual filament mapping after mixed-row enable/delete
+    // changes when the physical filament count itself did not change.
+    void                        update_mixed_filament_id_remap(const std::vector<MixedFilament> &old_mixed,
+                                                               size_t old_num_filaments,
+                                                               size_t new_num_filaments);
+    // Mapping generated during the latest filament count change.
+    // Index is old 1-based filament ID, value is new 1-based filament ID (0 = removed).
+    const std::vector<unsigned int>& last_filament_id_remap() const { return m_last_filament_id_remap; }
+    std::vector<unsigned int> consume_last_filament_id_remap()
+    {
+        std::vector<unsigned int> out = std::move(m_last_filament_id_remap);
+        m_last_filament_id_remap.clear();
+        return out;
+    }
 
     void                        on_extruders_count_changed(int extruder_count);
 
@@ -354,8 +375,15 @@ private:
     std::vector<std::string>    merge_presets(PresetBundle &&other);
     // Update the multicolor information for filaments.
     void update_filament_multi_color();
+    void                        build_filament_id_remap(const std::vector<MixedFilament> &old_mixed,
+                                                        size_t old_num_filaments,
+                                                        size_t new_num_filaments,
+                                                        bool deleting_filament,
+                                                        unsigned int deleted_1based);
     // Update renamed_from and alias maps of system profiles.
     void 						update_system_maps();
+
+    std::vector<unsigned int> m_last_filament_id_remap;
 
     // Set the is_visible flag for filaments and sla materials,
     // apply defaults based on enabled printers when no filaments/materials are installed.

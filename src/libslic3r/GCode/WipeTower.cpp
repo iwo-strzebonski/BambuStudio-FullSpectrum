@@ -2659,7 +2659,7 @@ WipeTower::ToolChangeResult WipeTower::finish_layer(bool extrude_perimeter, bool
     bool first_layer = is_first_layer();
     // BBS: speed up perimeter speed to 90mm/s for non-first layer
     float           feedrate   = first_layer ? std::min(m_first_layer_speed * 60.f, 5400.f) : std::min(60.0f * m_filpar[m_current_tool].max_e_speed / m_extrusion_flow, 5400.f);
-    float fill_box_y = m_layer_info->toolchanges_depth() + m_perimeter_width;
+    float fill_box_y = m_layer_info->toolchanges_depth() + m_layer_info->local_z_reserve_depth() + m_perimeter_width;
     box_coordinates fill_box(Vec2f(m_perimeter_width, fill_box_y),
                              m_wipe_tower_width - 2 * m_perimeter_width, m_layer_info->depth - fill_box_y);
 
@@ -2895,6 +2895,124 @@ void WipeTower::plan_toolchange(float z_par, float layer_height_par, unsigned in
 }
 
 
+// FullSpectrum: reserve wipe-tower depth for local-Z sublayer tool changes
+void WipeTower::plan_local_z_reserve(float z_par, float layer_height_par,
+                                     size_t reserve_slot_count, float wipe_volume)
+{
+    if (reserve_slot_count == 0)
+        return;
+
+    assert(m_plan.empty() || m_plan.back().z <= z_par + WT_EPSILON);
+
+    if (m_plan.empty() || m_plan.back().z + WT_EPSILON < z_par)
+        m_plan.push_back(WipeTowerInfo(z_par, layer_height_par));
+
+    const float mini_wipe_depth = m_local_z_wipe_tower_purge_lines * m_perimeter_width * m_extra_spacing;
+    const float wipe_width      = std::max(0.f, m_wipe_tower_width - 3.f * m_perimeter_width);
+
+    float wiping_depth = 0.f;
+    if (wipe_width > WT_EPSILON && wipe_volume > 0.f)
+        wiping_depth = std::ceil(volume_to_length(wipe_volume, m_perimeter_width, layer_height_par) / wipe_width) * m_perimeter_width;
+
+    const float slot_depth =
+        std::max(2.5f * m_perimeter_width,
+                 std::max(mini_wipe_depth + m_perimeter_width, wiping_depth + m_perimeter_width));
+
+    WipeTowerInfo &layer = m_plan.back();
+    layer.local_z_reserve_slot_depth = std::max(layer.local_z_reserve_slot_depth, slot_depth);
+    layer.local_z_reserve_slot_count += reserve_slot_count;
+}
+
+// FullSpectrum: compute world-space reserve box coordinates per layer per slot
+std::vector<std::vector<WipeTower::box_coordinates>> WipeTower::get_local_z_reserve_boxes() const
+{
+    std::vector<std::vector<box_coordinates>> out;
+    out.reserve(m_plan.size());
+
+    for (size_t layer_idx = 0; layer_idx < m_plan.size(); ++layer_idx) {
+        const WipeTowerInfo& layer = m_plan[layer_idx];
+        std::vector<box_coordinates> layer_boxes;
+        layer_boxes.reserve(layer.local_z_reserve_slot_count);
+
+        if (layer.local_z_reserve_slot_count > 0 && layer.local_z_reserve_slot_depth > WT_EPSILON) {
+            for (size_t slot_idx = 0; slot_idx < layer.local_z_reserve_slot_count; ++slot_idx) {
+                const float slot_start = layer.toolchanges_depth() + float(slot_idx) * layer.local_z_reserve_slot_depth;
+                const float width      = std::max(0.f, m_wipe_tower_width - 2.f * m_perimeter_width);
+                const float height     = std::max(0.f, layer.local_z_reserve_slot_depth - m_perimeter_width);
+                if (width <= WT_EPSILON || height <= WT_EPSILON)
+                    continue;
+                // BambuStudio uses SHAPE_NORMAL (no alternating rotation), so no rotation needed
+                layer_boxes.emplace_back(Vec2f(m_perimeter_width, slot_start + m_perimeter_width), width, height);
+            }
+        }
+
+        out.emplace_back(std::move(layer_boxes));
+    }
+
+    return out;
+}
+
+// FullSpectrum: execute a local-Z tool change within a pre-reserved slot
+WipeTower::ToolChangeResult WipeTower::local_z_tool_change(size_t new_tool,
+                                                           const box_coordinates& cleaning_box,
+                                                           float wipe_volume)
+{
+    const size_t old_tool = m_current_tool;
+
+    WipeTowerWriter writer(m_layer_height, m_perimeter_width, m_gcode_flavor, m_filpar);
+    writer.set_extrusion_flow(m_extrusion_flow)
+        .set_z(m_z_pos)
+        .set_initial_tool(m_current_tool);
+
+    writer.append(";--------------------\n"
+                  "; CP LOCAL-Z TOOLCHANGE START\n");
+    writer.comment_with_value(" toolchange #", m_num_tool_changes + 1);
+    writer.append(";" + GCodeProcessor::reserved_tag(GCodeProcessor::ETags::Wipe_Tower_Start) + "\n");
+
+    set_for_wipe_tower_writer(writer);
+    writer.set_initial_position(cleaning_box.ld, m_wipe_tower_width, m_wipe_tower_depth, m_internal_rotation);
+
+    // Wipe the nozzle into the reserved slot
+    const float xl = cleaning_box.ld.x() + m_perimeter_width;
+    const float xr = cleaning_box.rd.x() - m_perimeter_width;
+    float y = cleaning_box.ld.y() + m_perimeter_width / 2.f;
+    const float dy = m_perimeter_width;
+    const float wipe_width = xr - xl;
+    bool left_to_right = true;
+
+    if (wipe_width > WT_EPSILON && wipe_volume > 0.f) {
+        float x_to_wipe = volume_to_length(wipe_volume, m_perimeter_width, m_layer_height);
+        float feedrate = is_first_layer() ? std::min(m_first_layer_speed * 60.f, 5400.f)
+                                          : std::min(60.f * m_filpar[m_current_tool].max_e_speed / m_extrusion_flow, 5400.f);
+        writer.travel(xl, y);
+        while (x_to_wipe > WT_EPSILON && y < cleaning_box.lu.y() - m_perimeter_width / 2.f) {
+            writer.extrude(left_to_right ? xr : xl, y, feedrate);
+            x_to_wipe -= wipe_width;
+            if (x_to_wipe > WT_EPSILON) {
+                y += dy;
+                writer.extrude(writer.x(), y);
+            }
+            left_to_right = !left_to_right;
+        }
+    }
+
+    writer.append(";" + GCodeProcessor::reserved_tag(GCodeProcessor::ETags::Wipe_Tower_End) + "\n");
+    ++m_num_tool_changes;
+
+    writer.feedrate(m_travel_speed * 60.f)
+        .flush_planner_queue()
+        .reset_extruder()
+        .append("; CP LOCAL-Z TOOLCHANGE END\n"
+                ";------------------\n"
+                "\n");
+
+    if (m_current_tool < m_used_filament_length.size())
+        m_used_filament_length[m_current_tool] += writer.get_and_reset_used_filament_length();
+
+    ToolChangeResult result = construct_tcr(writer, false, old_tool, false, true, wipe_volume, false);
+    return result;
+}
+
 
 void WipeTower::plan_tower()
 {
@@ -2960,7 +3078,7 @@ void WipeTower::plan_tower()
     float max_depth_for_all = 0;
     for (int layer_index = int(m_plan.size()) - 1; layer_index >= 0; --layer_index)
 	{
-        float this_layer_depth = std::max(m_plan[layer_index].depth, m_plan[layer_index].toolchanges_depth());
+        float this_layer_depth = std::max(m_plan[layer_index].depth, m_plan[layer_index].planned_depth());
         if (m_enable_wrapping_detection && (layer_index < m_wrapping_detection_layers) && this_layer_depth < EPSILON)
             this_layer_depth = wrapping_wipe_tower_depth;
 
@@ -4495,6 +4613,17 @@ void WipeTower::plan_tower_new()
     }
 
     update_all_layer_depth(max_depth);
+
+    // FullSpectrum: account for local-Z reserve depth in the wipe tower footprint
+    for (auto& info : m_plan) {
+        float lz_rd = info.local_z_reserve_depth();
+        if (lz_rd > WT_EPSILON) {
+            info.depth += lz_rd;
+            if (info.depth + m_perimeter_width > m_wipe_tower_depth)
+                m_wipe_tower_depth = info.depth + m_perimeter_width;
+        }
+    }
+
     set_nozzle_last_layer_id();
     if(m_use_gap_wall) get_all_wall_skip_points();
     float diagonal = sqrt(m_wipe_tower_depth * m_wipe_tower_depth + m_wipe_tower_width * m_wipe_tower_width);
@@ -4890,7 +5019,7 @@ WipeTower::ToolChangeResult WipeTower::only_generate_out_wall(bool is_new_mode)
     bool first_layer = is_first_layer();
     // BBS: speed up perimeter speed to 90mm/s for non-first layer
     float feedrate   = first_layer ? std::min(m_first_layer_speed * 60.f, m_max_speed) : std::min(60.0f * m_filpar[m_current_tool].max_e_speed / m_extrusion_flow, m_max_speed);
-    float           fill_box_y = m_layer_info->toolchanges_depth() + m_perimeter_width;
+    float           fill_box_y = m_layer_info->toolchanges_depth() + m_layer_info->local_z_reserve_depth() + m_perimeter_width;
     box_coordinates fill_box(Vec2f(m_perimeter_width, fill_box_y), m_wipe_tower_width - 2 * m_perimeter_width, m_layer_info->depth - fill_box_y);
 
     writer.set_initial_position((m_left_to_right ? fill_box.ru : fill_box.lu), // so there is never a diagonal travel

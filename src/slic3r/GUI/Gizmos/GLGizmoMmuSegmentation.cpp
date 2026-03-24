@@ -12,6 +12,8 @@
 #include "slic3r/GUI/GUI.hpp"
 #include "libslic3r/PresetBundle.hpp"
 #include "libslic3r/Model.hpp"
+#include "libslic3r/MixedFilament.hpp"
+#include "libslic3r/filament_mixer.h"
 #include "slic3r/Utils/UndoRedo.hpp"
 
 
@@ -91,6 +93,36 @@ static std::vector<int> get_extruder_id_for_volumes(const ModelObject &model_obj
 void GLGizmoMmuSegmentation::init_extruders_data()
 {
     m_extruders_colors       = wxGetApp().plater()->get_extruders_colors();
+    const size_t num_physical = m_extruders_colors.size();
+
+    // FullSpectrum: append blended colors for virtual mixed filaments
+    if (wxGetApp().preset_bundle != nullptr) {
+        const auto &mgr = wxGetApp().preset_bundle->mixed_filaments;
+        const size_t num_total = mgr.total_filaments(num_physical);
+        if (num_total > num_physical) {
+            m_extruders_colors.reserve(num_total);
+            for (size_t virt_id = num_physical + 1; virt_id <= num_total; ++virt_id) {
+                int mix_idx = mgr.mixed_index_from_filament_id(unsigned(virt_id), num_physical);
+                if (mix_idx >= 0 && size_t(mix_idx) < mgr.rows().size()) {
+                    const auto &mf = mgr.rows()[size_t(mix_idx)];
+                    if (mf.filament_a > 0 && mf.filament_a <= int(num_physical) &&
+                        mf.filament_b > 0 && mf.filament_b <= int(num_physical)) {
+                        const auto &ca = m_extruders_colors[size_t(mf.filament_a - 1)];
+                        const auto &cb = m_extruders_colors[size_t(mf.filament_b - 1)];
+                        float ratio = float(mf.mix_b_percent) / 100.f;
+                        float r, g, b;
+                        filament_mixer_lerp(ca[0], ca[1], ca[2], cb[0], cb[1], cb[2], ratio, &r, &g, &b);
+                        m_extruders_colors.push_back({r, g, b, 1.f});
+                    } else {
+                        m_extruders_colors.push_back({0.5f, 0.5f, 0.5f, 1.f});
+                    }
+                } else {
+                    m_extruders_colors.push_back({0.5f, 0.5f, 0.5f, 1.f});
+                }
+            }
+        }
+    }
+
     size_t n_extruder_colors = std::min((size_t) EnforcerBlockerType::ExtruderMax, m_extruders_colors.size());
     if (n_extruder_colors == 2 || m_selected_extruder_idx >= n_extruder_colors) {
         m_selected_extruder_idx = n_extruder_colors - 1;

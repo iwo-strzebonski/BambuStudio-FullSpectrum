@@ -3181,6 +3181,8 @@ void Print::_make_wipe_tower()
 
     m_wipe_tower_data.used_filament         = wipe_tower.get_used_filament();
     m_wipe_tower_data.number_of_toolchanges = wipe_tower.get_number_of_toolchanges();
+    // FullSpectrum: retrieve local-Z reserve boxes for GCode sublayer emission
+    m_wipe_tower_data.local_z_reserve_boxes = wipe_tower.get_local_z_reserve_boxes();
     m_wipe_tower_data.construct_mesh(wipe_tower.width(), wipe_tower.get_depth(), wipe_tower.get_height(), wipe_tower.get_brim_width(), config().prime_tower_rib_wall.value,
                                      wipe_tower.get_rib_width(), wipe_tower.get_rib_length(), config().prime_tower_fillet_wall.value);
     const Vec3d origin                      = this->get_plate_origin();

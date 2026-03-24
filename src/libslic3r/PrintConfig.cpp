@@ -4005,6 +4005,129 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionFloat(0.01));
 
+    // FullSpectrum: mixed filament and dithering options ---------------------
+
+    def = this->add("mixed_color_layer_height_a", coFloat);
+    def->label = L("Dithering cadence height A");
+    def->category = L("Others");
+    def->tooltip = L("Layer height contribution of component A for dithering virtual filaments. "
+                     "Set to 0 to use normal 1-layer A / 1-layer B alternation.");
+    def->sidetext = "mm";
+    def->min = 0.;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0.0));
+
+    def = this->add("mixed_color_layer_height_b", coFloat);
+    def->label = L("Dithering cadence height B");
+    def->category = L("Others");
+    def->tooltip = L("Layer height contribution of component B for dithering virtual filaments. "
+                     "Set to 0 to use normal 1-layer A / 1-layer B alternation.");
+    def->sidetext = "mm";
+    def->min = 0.;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0.0));
+
+    def = this->add("mixed_filament_gradient_mode", coBool);
+    def->label = L("Height-weighted cadence");
+    def->category = L("Others");
+    def->tooltip = L("Enable height-weighted cadence for mixed filaments. "
+                     "When disabled, layer-cycle cadence is used.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("mixed_filament_height_lower_bound", coFloat);
+    def->label = L("Mixed filament lower height bound");
+    def->category = L("Others");
+    def->tooltip = L("Lower bound used by the height-weighted mixed filament gradient mode.");
+    def->sidetext = "mm";
+    def->min = 0.01;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0.04));
+
+    def = this->add("mixed_filament_height_upper_bound", coFloat);
+    def->label = L("Mixed filament upper height bound");
+    def->category = L("Others");
+    def->tooltip = L("Upper bound used by the height-weighted mixed filament gradient mode.");
+    def->sidetext = "mm";
+    def->min = 0.01;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0.16));
+
+    def = this->add("mixed_filament_advanced_dithering", coBool);
+    def->label = L("Advanced dithering");
+    def->category = L("Others");
+    def->tooltip = L("Distribute mixed filament layer-cycle cadence using an advanced ordered dithering pattern. "
+                     "This can reduce visible striping for some hues.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("mixed_filament_pointillism_pixel_size", coFloat);
+    def->label = L("Pointillisme pixel size");
+    def->category = L("Others");
+    def->tooltip = L("Length of one pointillisme segment along an extrusion path. "
+                     "Set to 0 to use automatic nozzle-based sizing. "
+                     "Warning: Same-layer pointillisme is extremely experimental.");
+    def->sidetext = "mm";
+    def->min = 0.;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0.0));
+
+    def = this->add("mixed_filament_pointillism_line_gap", coFloat);
+    def->label = L("Pointillisme line gap");
+    def->category = L("Others");
+    def->tooltip = L("Non-extruded spacing between adjacent pointillisme segments. "
+                     "Warning: Same-layer pointillisme is extremely experimental.");
+    def->sidetext = "mm";
+    def->min = 0.;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0.0));
+
+    def = this->add("mixed_filament_surface_indentation", coFloat);
+    def->label = L("Selective Expansion contraction");
+    def->category = L("Others");
+    def->tooltip = L("XY offset applied to mixed-filament painted regions before region assignment. "
+                     "Positive values contract the mixed zone inward. Negative values expand it outward.");
+    def->sidetext = "mm";
+    def->min = -2.0;
+    def->max = 2.0;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0.0));
+
+    def = this->add("mixed_filament_definitions", coString);
+    def->label = L("Mixed filament custom definitions");
+    def->tooltip = L("Serialized custom mixed filament rows.");
+    def->gui_flags = "serialized";
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionString(""));
+
+    def = this->add("dithering_z_step_size", coFloat);
+    def->label = L("Dithering Z step size");
+    def->category = L("Others");
+    def->tooltip = L("Layer height used in Z zones painted with dithering (mixed virtual filaments). "
+                     "Set to 0 to keep normal layer height in those zones.");
+    def->sidetext = "mm";
+    def->min = 0.;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0.0));
+
+    def = this->add("dithering_local_z_mode", coBool);
+    def->label = L("Local Z dithering mode");
+    def->category = L("Others");
+    def->tooltip = L("Blend colors by varying layer heights in blended zones instead of using a fixed ratio. "
+                     "Non-blended areas keep their nominal layer height.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(false));
+
+    def = this->add("dithering_step_painted_zones_only", coBool);
+    def->label = L("Use step size in painted zones only");
+    def->category = L("Others");
+    def->tooltip = L("When enabled, dithering Z step size is applied only where mixed filament is painted. "
+                     "Unpainted zones keep their original layer height.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(true));
+
+    // End FullSpectrum options -----------------------------------------------
+
     def = this->add("retraction_minimum_travel", coFloats);
     def->label = L("Travel distance threshold");
     def->tooltip = L("Only trigger retraction when the travel distance is longer than this threshold");

@@ -473,6 +473,12 @@ set(lisbslic3r_sources
     Interlocking/VoxelUtils.cpp
     MultiNozzleUtils.hpp
     MultiNozzleUtils.cpp
+    MixedFilament.hpp
+    MixedFilament.cpp
+    LocalZOrderOptimizer.hpp
+    filament_mixer.h
+    filament_mixer.cpp
+    filament_mixer_model.h
 )
 
 if (APPLE)

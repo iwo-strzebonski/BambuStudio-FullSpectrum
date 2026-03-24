@@ -185,6 +185,11 @@ public:
 	// to be used before building begins. The entries must be added ordered in z.
     void plan_toolchange(float z_par, float layer_height_par, unsigned int old_tool, unsigned int new_tool, float wipe_volume_ec = 0.f, float wipe_volume_nc = 0.f, float prime_volume = 0.f);
 
+	// FullSpectrum: reserve wipe-tower slots for local-Z sublayer tool changes
+	void plan_local_z_reserve(float z_par, float layer_height_par, size_t reserve_slot_count, float wipe_volume = 0.f);
+	std::vector<std::vector<box_coordinates>> get_local_z_reserve_boxes() const;
+	ToolChangeResult local_z_tool_change(size_t new_tool, const box_coordinates& cleaning_box, float wipe_volume);
+
 
 	// Iterates through prepared m_plan, generates ToolChangeResults and appends them to "result"
 	void generate(std::vector<std::vector<ToolChangeResult>> &result);
@@ -430,6 +435,7 @@ private:
     bool   m_enable_wrapping_detection = false;
 	bool   m_enable_timelapse_print = false;
 	bool   m_semm               = true; // Are we using a single extruder multimaterial printer?
+	float  m_local_z_wipe_tower_purge_lines = 3.f; // FullSpectrum: purge lines per local-Z reserve slot
     Vec2f  m_wipe_tower_pos; 			// Left front corner of the wipe tower in mm.
 	float  m_wipe_tower_width; 			// Width of the wipe tower.
 	float  m_wipe_tower_depth 	= 0.f; 	// Depth of the wipe tower
@@ -583,6 +589,12 @@ private:
 		float extra_spacing;
         bool  extruder_fill{true};
 		float toolchanges_depth() const { float sum = 0.f; for (const auto &a : tool_changes) sum += a.required_depth; return sum; }
+
+		// FullSpectrum: local-Z reserve slots for sublayer tool changes
+		float  local_z_reserve_slot_depth { 0.f };
+		size_t local_z_reserve_slot_count { 0 };
+		float  local_z_reserve_depth() const { return local_z_reserve_slot_depth * float(local_z_reserve_slot_count); }
+		float  planned_depth() const { return toolchanges_depth() + local_z_reserve_depth(); }
 
 		std::vector<ToolChange> tool_changes;
 

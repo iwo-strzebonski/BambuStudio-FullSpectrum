@@ -2225,6 +2225,25 @@ void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
         return;
     }
 
+    // FullSpectrum: Keep Mixed Filament settings in sync with project_config
+    // so that full_fff_config() picks them up (project_config is applied last).
+    if (m_type == Preset::TYPE_PRINT &&
+        (opt_key == "mixed_filament_gradient_mode" ||
+         opt_key == "mixed_filament_height_lower_bound" ||
+         opt_key == "mixed_filament_height_upper_bound" ||
+         opt_key == "mixed_filament_advanced_dithering" ||
+         opt_key == "mixed_filament_pointillism_pixel_size" ||
+         opt_key == "mixed_filament_pointillism_line_gap" ||
+         opt_key == "mixed_filament_surface_indentation" ||
+         opt_key == "dithering_z_step_size" ||
+         opt_key == "dithering_local_z_mode" ||
+         opt_key == "dithering_step_painted_zones_only" ||
+         opt_key == "mixed_filament_definitions")) {
+        DynamicPrintConfig &project_cfg = wxGetApp().preset_bundle->project_config;
+        if (const ConfigOption *opt = m_config->option(opt_key))
+            project_cfg.set_key_value(opt_key, opt->clone());
+    }
+
     update();
     if (m_active_page)
         m_active_page->update_visibility(m_mode, true);
@@ -2938,6 +2957,19 @@ void TabPrint::build()
         optgroup->append_single_option_line("sparse_infill_filament");
         optgroup->append_single_option_line("solid_infill_filament");
         optgroup->append_single_option_line("wall_filament");
+
+        // FullSpectrum: Mixed Filament controls
+        optgroup = page->new_optgroup(L("Mixed Filaments"));
+        optgroup->append_single_option_line("mixed_filament_gradient_mode");
+        optgroup->append_single_option_line("mixed_filament_height_lower_bound");
+        optgroup->append_single_option_line("mixed_filament_height_upper_bound");
+        optgroup->append_single_option_line("mixed_filament_advanced_dithering");
+        optgroup->append_single_option_line("mixed_filament_pointillism_pixel_size");
+        optgroup->append_single_option_line("mixed_filament_pointillism_line_gap");
+        optgroup->append_single_option_line("mixed_filament_surface_indentation");
+        optgroup->append_single_option_line("dithering_z_step_size");
+        optgroup->append_single_option_line("dithering_local_z_mode");
+        optgroup->append_single_option_line("dithering_step_painted_zones_only");
 
         optgroup = page->new_optgroup(L("G-code output"), L"param_gcode");
         optgroup->append_single_option_line("reduce_infill_retraction");

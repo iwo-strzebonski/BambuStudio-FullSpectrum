@@ -2289,6 +2289,17 @@ void GLVolumeCollection::update_colors_by_extruder(const DynamicPrintConfig *con
             if (Slic3r::GUI::BitmapCache::parse_color4(txt_color, rgba))
                 colors[i].set(txt_color, rgba);
         }
+
+        // FullSpectrum: append mixed (virtual) filament display colors
+        if (Slic3r::GUI::wxGetApp().preset_bundle) {
+            const auto mixed_colors = Slic3r::GUI::wxGetApp().preset_bundle->mixed_filaments.display_colors();
+            for (const auto &mc : mixed_colors) {
+                Color c;
+                if (Slic3r::GUI::BitmapCache::parse_color4(mc, rgba))
+                    c.set(mc, rgba);
+                colors.push_back(c);
+            }
+        }
     }
 
     for (GLVolume* volume : volumes) {

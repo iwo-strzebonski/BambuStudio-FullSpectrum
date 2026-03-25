@@ -35,7 +35,10 @@ static PrinterTechnology printer_technology()
 
 static int filaments_count()
 {
-    return wxGetApp().filaments_cnt();
+    if (wxGetApp().preset_bundle == nullptr)
+        return 0;
+    const int physical = std::max(wxGetApp().filaments_cnt(), 0);
+    return static_cast<int>(wxGetApp().preset_bundle->mixed_filaments.total_filaments(size_t(physical)));
 }
 
 static bool is_improper_category(const std::string& category, const int filaments_cnt, const bool is_object_settings = true)

@@ -191,6 +191,11 @@ public:
     void edit_filament();
     void add_custom_filament(wxColour new_col);
     bool is_new_project_in_gcode3mf();
+
+    // FullSpectrum mixed filament sidebar panel
+    void update_mixed_filament_panel(bool sync_manager = true);
+    std::vector<unsigned int> get_ui_ordered_filament_ids() const;
+
     // BBS
     void on_bed_type_change(BedType bed_type);
     void load_ams_list(MachineObject* obj);

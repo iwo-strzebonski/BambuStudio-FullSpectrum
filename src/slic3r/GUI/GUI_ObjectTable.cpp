@@ -2869,6 +2869,31 @@ int ObjectTablePanel::init_filaments_and_colors()
         i++;
     }
 
+    // FullSpectrum: append mixed (virtual) filaments
+    {
+        const auto &mixed_mgr = wxGetApp().preset_bundle->mixed_filaments;
+        const size_t physical = m_filaments_count;
+        size_t virt_idx = 0;
+        for (const auto &mf : mixed_mgr.mixed_filaments()) {
+            if (!mf.enabled || mf.deleted)
+                continue;
+            unsigned char rgb4[4];
+            const auto dc = mixed_mgr.display_colors();
+            if (virt_idx < dc.size()) {
+                if (Slic3r::GUI::BitmapCache::parse_color4(dc[virt_idx], rgb4))
+                    m_filaments_colors.push_back(wxColour(rgb4[0], rgb4[1], rgb4[2]));
+                else
+                    m_filaments_colors.push_back(*wxGREEN);
+            } else {
+                m_filaments_colors.push_back(*wxGREEN);
+            }
+            m_filaments_name.push_back(wxString::Format("%d: Mixed (F%u + F%u)",
+                int(physical + virt_idx + 1), unsigned(mf.component_a), unsigned(mf.component_b)));
+            ++virt_idx;
+        }
+        m_filaments_count = int(physical + virt_idx);
+    }
+
     return 0;
 }
 

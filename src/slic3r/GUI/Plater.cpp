@@ -3559,8 +3559,16 @@ void Sidebar::on_filament_count_change(size_t num_filaments)
 {
     auto& choices = combos_filament();
 
-    if (num_filaments == choices.size())
+    if (num_filaments == choices.size()) {
+        // Physical count unchanged – still refresh mixed filament panel
+        // so deletions/edits of mixed filaments are reflected in the UI.
+        const bool sync_manager = !p->m_skip_mixed_filament_sync_once;
+        p->m_skip_mixed_filament_sync_once = false;
+        update_ui_from_settings();
+        dynamic_filament_list.update();
+        update_mixed_filament_panel(sync_manager);
         return;
+    }
 
     if (choices.size() == 1 || num_filaments == 1)
         choices[0]->GetDropDown().Invalidate();
@@ -4077,7 +4085,7 @@ void Sidebar::update_mixed_filament_panel(bool sync_manager)
     rows_scroller->Layout();
     rows_scroller->FitInside();
     // Cap height
-    int content_h = std::clamp(rows_scroller->GetVirtualSize().y, FromDIP(68), FromDIP(220));
+    int content_h = std::clamp(rows_scroller->GetVirtualSize().y, FromDIP(68), FromDIP(280));
     rows_scroller->SetMinSize(wxSize(-1, content_h));
     rows_scroller->SetMaxSize(wxSize(-1, content_h));
 
@@ -4904,7 +4912,7 @@ void Sidebar::auto_calc_flushing_volumes_internal(const int modify_id, const int
     int m_max_flush_volume = Slic3r::g_max_flush_volume;
     unsigned int m_number_of_extruders = (int)(sqrt(init_matrix.size()) + 0.001);
 
-    const std::vector<std::string> extruder_colours = wxGetApp().plater()->get_extruder_colors_from_plater_config();
+    const std::vector<std::string> extruder_colours = wxGetApp().plater()->get_extruder_colors_from_plater_config(nullptr, false);
     std::vector<std::vector<wxColour>> multi_colours;
 
     // Support for multi-color filament
@@ -19968,17 +19976,30 @@ void Plater::on_activate()
 }
 
 // Get vector of extruder colors considering filament color, if extruder color is undefined.
-std::vector<std::string> Plater::get_extruder_colors_from_plater_config(const GCodeProcessorResult* const result) const
+std::vector<std::string> Plater::get_extruder_colors_from_plater_config(const GCodeProcessorResult* const result, bool include_mixed) const
 {
     if (wxGetApp().is_gcode_viewer() && result != nullptr)
         return result->extruder_colors;
     else {
+        if (wxGetApp().preset_bundle == nullptr)
+            return {};
+
         const Slic3r::DynamicPrintConfig* config = &wxGetApp().preset_bundle->project_config;
         std::vector<std::string> filament_colors;
         if (!config->has("filament_colour")) // in case of a SLA print
             return filament_colors;
 
         filament_colors = (config->option<ConfigOptionStrings>("filament_colour"))->values;
+        const size_t num_physical = static_cast<size_t>(std::max(wxGetApp().filaments_cnt(), 0));
+        filament_colors.resize(num_physical, "#26A69A");
+
+        if (include_mixed) {
+            // FullSpectrum: append display colours for enabled mixed (virtual) filaments.
+            const auto &mixed_mgr = wxGetApp().preset_bundle->mixed_filaments;
+            for (const auto &dc : mixed_mgr.display_colors())
+                filament_colors.push_back(dc);
+        }
+
         return filament_colors;
     }
 }

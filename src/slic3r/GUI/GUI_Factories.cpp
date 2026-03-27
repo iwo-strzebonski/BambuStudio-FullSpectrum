@@ -939,11 +939,16 @@ void MenuFactory::append_menu_item_change_extruder(wxMenu* menu)
         wxString item_name = _L("Default");
 
         if (i > 0) {
-            auto preset = wxGetApp().preset_bundle->filaments.find_preset(wxGetApp().preset_bundle->filament_presets[i - 1]);
-            if (preset == nullptr) {
-                item_name = wxString::Format(_L("Filament %d"), i);
+            const int physical = std::max(wxGetApp().filaments_cnt(), 0);
+            if (i <= physical) {
+                auto preset = wxGetApp().preset_bundle->filaments.find_preset(wxGetApp().preset_bundle->filament_presets[i - 1]);
+                if (preset == nullptr) {
+                    item_name = wxString::Format(_L("Filament %d"), i);
+                } else {
+                    item_name = from_u8(preset->label(false));
+                }
             } else {
-                item_name = from_u8(preset->label(false));
+                item_name = wxString::Format(_L("Mixed Filament %d"), i);
             }
         }
 
@@ -1474,7 +1479,8 @@ void MenuFactory::create_filament_action_menu(bool init, int active_filament_men
 
     wxMenu* sub_menu = new wxMenu();
     std::vector<wxBitmap*> icons = get_extruder_color_icons(true);
-    int filaments_cnt = icons.size();
+    // FullSpectrum: limit merge list to physical filaments only
+    int filaments_cnt = std::min(int(icons.size()), std::max(wxGetApp().filaments_cnt(), 0));
     for (int i = 0; i < filaments_cnt; i++) {
         if (i == active_filament_menu_id)
             continue;
@@ -2352,11 +2358,16 @@ void MenuFactory::append_menu_item_change_filament(wxMenu* menu)
         wxString item_name = _L("Default");
 
         if (i > 0) {
-            auto preset = wxGetApp().preset_bundle->filaments.find_preset(wxGetApp().preset_bundle->filament_presets[i - 1]);
-            if (preset == nullptr) {
-                item_name = wxString::Format(_L("Filament %d"), i);
+            const int physical = std::max(wxGetApp().filaments_cnt(), 0);
+            if (i <= physical) {
+                auto preset = wxGetApp().preset_bundle->filaments.find_preset(wxGetApp().preset_bundle->filament_presets[i - 1]);
+                if (preset == nullptr) {
+                    item_name = wxString::Format(_L("Filament %d"), i);
+                } else {
+                    item_name = from_u8(preset->label(false));
+                }
             } else {
-                item_name = from_u8(preset->label(false));
+                item_name = wxString::Format(_L("Mixed Filament %d"), i);
             }
         }
 

@@ -6614,9 +6614,9 @@ void ObjectList::on_set_extruder_timer(wxTimerEvent& evt)
 // BBS: remove "const" qualifier
 void ObjectList::set_extruder_for_selected_items(const int extruder)
 {
-    // BBS: check extruder id
+    // BBS: check extruder id — include virtual (mixed) filaments in the limit
     std::vector<std::string> colors = wxGetApp().plater()->get_extruder_colors_from_plater_config();
-    if (extruder > colors.size())
+    if (extruder > 0 && size_t(extruder) > colors.size())
         return;
 
     wxDataViewItemArray sels;

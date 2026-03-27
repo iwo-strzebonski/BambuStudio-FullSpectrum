@@ -21,6 +21,7 @@
 #include "I18N.hpp"
 #include "GUI_Utils.hpp"
 #include "Plater.hpp"
+#include "libslic3r/PresetBundle.hpp"
 #include "../Utils/MacDarkMode.hpp"
 #include "BitmapComboBox.hpp"
 #include "Widgets/StaticBox.hpp"
@@ -576,6 +577,14 @@ std::vector<wxBitmap*> get_extruder_color_icons(bool thin_icon/* = false*/)
                 bmps.push_back(get_extruder_color_icon(colors[0], label, icon_width, icon_height));
             } else {
                 bmps.push_back(get_extruder_color_icon(colors, is_gradient, label, icon_width, icon_height));
+            }
+        }
+        // FullSpectrum: append icons for virtual (mixed) filaments
+        if (Slic3r::GUI::wxGetApp().preset_bundle != nullptr) {
+            const auto &mixed_mgr = Slic3r::GUI::wxGetApp().preset_bundle->mixed_filaments;
+            for (const auto &dc : mixed_mgr.display_colors()) {
+                auto label = std::to_string(++index);
+                bmps.push_back(get_extruder_color_icon(dc, label, icon_width, icon_height));
             }
         }
     } else {

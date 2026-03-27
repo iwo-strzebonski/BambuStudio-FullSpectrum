@@ -1546,7 +1546,7 @@ std::string GUI_App::get_plugin_url(std::string name, std::string country_code)
 {
     std::string url = get_http_url(country_code);
 
-    std::string curr_version = SLIC3R_VERSION;
+    std::string curr_version = BAMBU_NETWORK_AGENT_VERSION;
     std::string using_version = curr_version.substr(0, 9) + "00";
     if (name == "cameratools")
         using_version = curr_version.substr(0, 6) + "00.00";

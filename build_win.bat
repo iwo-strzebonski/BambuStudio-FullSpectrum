@@ -60,21 +60,27 @@ SET PS_DEPS_PATH_FILE_NAME=.DEPS_PATH.txt
 SET PS_DEPS_PATH_FILE=%~dp0deps\build\%PS_DEPS_PATH_FILE_NAME%
 SET PS_CONFIG_LIST="Debug;MinSizeRel;Release;RelWithDebInfo"
 
-REM The officially supported toolchain version is 16 (Visual Studio 2019)
-REM TODO: Update versions after Boost gets rolled to 1.78 or later
+REM The officially supported toolchain version is 16 (Visual Studio 2019) or later
+REM Supports VS2019 (16.x) and VS2022 (17.x), including Build Tools installations
 SET PS_VERSION_SUPPORTED=16
-SET PS_VERSION_EXCEEDED=17
-SET VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe
-IF NOT EXIST "%VSWHERE%" SET VSWHERE=%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe
-FOR /F "tokens=4 USEBACKQ delims=." %%I IN (`"%VSWHERE%" -nologo -property productId`) DO SET PS_PRODUCT_DEFAULT=%%I
-IF "%PS_PRODUCT_DEFAULT%" EQU "" (
-    SET EXIT_STATUS=-1
-    @ECHO ERROR: No Visual Studio installation found. 1>&2
-    GOTO :HELP
-)
+SET PS_VERSION_EXCEEDED=20
+SET PS_PFILES86=%ProgramFiles(x86)%
+IF "%PS_PFILES86%" EQU "" SET PS_PFILES86=%ProgramFiles%
+SET VSWHERE=%PS_PFILES86%\Microsoft Visual Studio\Installer\vswhere.exe
+FOR /F "tokens=4 USEBACKQ delims=." %%I IN (`"%VSWHERE%" -products * -nologo -property productId`) DO SET PS_PRODUCT_DEFAULT=%%I
+IF "%PS_PRODUCT_DEFAULT%" NEQ "" GOTO :PRODUCT_DETECTED
+REM vswhere didn't find anything - check for unregistered BuildTools installations
+IF EXIST "%PS_PFILES86%\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\vsdevcmd.bat" SET PS_PRODUCT_DEFAULT=BuildTools
+IF "%PS_PRODUCT_DEFAULT%" NEQ "" GOTO :PRODUCT_DETECTED
+IF EXIST "%PS_PFILES86%\Microsoft Visual Studio\2019\BuildTools\Common7\Tools\vsdevcmd.bat" SET PS_PRODUCT_DEFAULT=BuildTools
+IF "%PS_PRODUCT_DEFAULT%" NEQ "" GOTO :PRODUCT_DETECTED
+SET EXIT_STATUS=-1
+@ECHO ERROR: No Visual Studio installation found. 1>&2
+GOTO :HELP
+:PRODUCT_DETECTED
 REM Default to the latest supported version if multiple are available
 FOR /F "tokens=1 USEBACKQ delims=." %%I IN (
-    `^""%VSWHERE%" -version "[%PS_VERSION_SUPPORTED%,%PS_VERSION_EXCEEDED%)" -latest -nologo -property catalog_buildVersion^"`
+    `^""%VSWHERE%" -products * -version "[%PS_VERSION_SUPPORTED%,%PS_VERSION_EXCEEDED%)" -latest -nologo -property catalog_buildVersion^"`
 ) DO SET PS_VERSION_SUPPORTED=%%I
 
 REM Probe build directories and system state for reasonable default arguments
@@ -151,8 +157,13 @@ IF "%PS_RUN%" NEQ "none" IF "%PS_STEPS:~0,4%" EQU "deps" (
 IF DEFINED PS_VERSION (
     SET /A PS_VERSION_EXCEEDED=%PS_VERSION% + 1
 ) ELSE SET PS_VERSION=%PS_VERSION_SUPPORTED%
-SET MSVC_FILTER=-products Microsoft.VisualStudio.Product.%PS_PRODUCT% -version "[%PS_VERSION%,%PS_VERSION_EXCEEDED%)"
+SET MSVC_FILTER=-products * -version "[%PS_VERSION%,%PS_VERSION_EXCEEDED%)"
 FOR /F "tokens=* USEBACKQ" %%I IN (`^""%VSWHERE%" %MSVC_FILTER% -nologo -property installationPath^"`) DO SET MSVC_DIR=%%I
+REM Fallback: vswhere may not detect unregistered BuildTools installations
+IF EXIST "%MSVC_DIR%\Common7\Tools\vsdevcmd.bat" GOTO :VSDIR_OK
+IF EXIST "%PS_PFILES86%\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\vsdevcmd.bat" SET MSVC_DIR=%PS_PFILES86%\Microsoft Visual Studio\2022\BuildTools
+IF EXIST "%PS_PFILES86%\Microsoft Visual Studio\2019\BuildTools\Common7\Tools\vsdevcmd.bat" SET MSVC_DIR=%PS_PFILES86%\Microsoft Visual Studio\2019\BuildTools
+:VSDIR_OK
 IF NOT EXIST "%MSVC_DIR%" (
     @ECHO ERROR: Compatible Visual Studio installation not found. 1>&2
     GOTO :HELP

@@ -1186,7 +1186,7 @@ static std::vector<Vec2d> get_path_of_change_filament(const Print& print)
                                          << " layer_idx=" << m_layer_idx
                                          << " extruder_id=" << extruder_id;
                 return gcodegen.set_extruder(unsigned(extruder_id),
-                                             gcodegen.writer().get_position().z() - gcodegen.config().z_offset.value);
+                                             gcodegen.writer().get_position().z());
             }
 
             size_t &slot_idx = m_local_z_reserve_slot_idx[size_t(m_layer_idx)];
@@ -1198,14 +1198,14 @@ static std::vector<Vec2d> get_path_of_change_filament(const Print& print)
                                            << " reserved_slots=" << layer_slots.size()
                                            << " consumed_slots=" << slot_idx;
                 return gcodegen.set_extruder(unsigned(extruder_id),
-                                             gcodegen.writer().get_position().z() - gcodegen.config().z_offset.value);
+                                             gcodegen.writer().get_position().z());
             }
 
             // Reserve slot available — use direct extruder switch for H2C (M620 protocol handled by set_extruder).
             ++slot_idx;
             const double current_z = gcodegen.writer().get_position().z();
             const double tower_z   = local_z_nominal_layer_z >= 0. ? local_z_nominal_layer_z : current_z;
-            const double toolchange_print_z = tower_z - gcodegen.config().z_offset.value;
+            const double toolchange_print_z = tower_z;
             return gcodegen.set_extruder(unsigned(extruder_id), toolchange_print_z);
         };
 
@@ -4729,8 +4729,8 @@ GCode::LayerResult GCode::process_layer(
         };
 
         const int local_z_phase_b_start_extruder =
-            (has_wipe_tower && m_writer.extruder() != nullptr) ? int(m_writer.extruder()->id()) : -1;
-        int  local_z_phase_b_active_extruder = (m_writer.extruder() != nullptr) ? int(m_writer.extruder()->id()) : -1;
+            (has_wipe_tower && m_writer.filament() != nullptr) ? int(m_writer.filament()->id()) : -1;
+        int  local_z_phase_b_active_extruder = (m_writer.filament() != nullptr) ? int(m_writer.filament()->id()) : -1;
         bool local_z_phase_b_changed_extruder = false;
 
         gcode += "; local-z phase-b perimeter passes begin\n";
@@ -4752,7 +4752,7 @@ GCode::LayerResult GCode::process_layer(
                 const size_t         group_local_idx = ordered_pass_group[ordered_group_idx];
                 const LocalZPassRef& pass_ref        = local_z_pass_refs[pass_ref_idx + group_local_idx];
                 const SubLayerPlan& pass_plan = *pass_ref.bucket->plan;
-                const double pass_z           = pass_plan.print_z + m_config.z_offset.value;
+                const double pass_z           = pass_plan.print_z;
                 const double saved_nominal_z  = m_nominal_z;
                 const float  saved_last_layer_z = m_last_layer_z;
                 m_nominal_z    = pass_z;
@@ -4779,7 +4779,7 @@ GCode::LayerResult GCode::process_layer(
                     if (has_wipe_tower && m_writer.need_toolchange(local_extruder_id))
                         local_z_phase_b_changed_extruder = true;
                     if (has_wipe_tower && m_wipe_tower)
-                        gcode += m_wipe_tower->tool_change(*this, int(local_extruder_id), false, true, print_z + m_config.z_offset.value);
+                        gcode += m_wipe_tower->tool_change(*this, int(local_extruder_id), false, true, print_z);
                     else
                         gcode += this->set_extruder(local_extruder_id, pass_plan.print_z);
 
@@ -4817,12 +4817,12 @@ GCode::LayerResult GCode::process_layer(
         if (has_wipe_tower && local_z_phase_b_changed_extruder && local_z_phase_b_start_extruder >= 0 &&
             m_writer.need_toolchange(static_cast<unsigned int>(local_z_phase_b_start_extruder))) {
             if (m_wipe_tower)
-                gcode += m_wipe_tower->tool_change(*this, local_z_phase_b_start_extruder, false, true, print_z + m_config.z_offset.value);
+                gcode += m_wipe_tower->tool_change(*this, local_z_phase_b_start_extruder, false, true, print_z);
             else
                 gcode += this->set_extruder(static_cast<unsigned int>(local_z_phase_b_start_extruder), print_z);
         }
 
-        const double nominal_layer_z = print_z + m_config.z_offset.value;
+        const double nominal_layer_z = print_z;
         if (std::abs(m_writer.get_position().z() - nominal_layer_z) > EPSILON) {
             gcode += this->retract(false, false, LiftType::NormalLift);
             gcode += m_writer.travel_to_z(nominal_layer_z, "Local-Z return to nominal layer");

@@ -1523,9 +1523,11 @@ bool PartPlate::check_filament_printable(const DynamicPrintConfig &config, wxStr
     std::vector<int> used_filaments = get_extruders(true);  // 1 base
     std::unordered_map<std::string, int> nozzle_fils;
     auto fil_preset_names = wxGetApp().preset_bundle->filament_presets;
+    const int num_physical = int(fil_preset_names.size());
 
     if (!used_filaments.empty()) {
         for (auto filament_idx : used_filaments) {
+            if (filament_idx > num_physical) continue; // skip virtual (mixed) filaments
             int filament_id = filament_idx - 1;
             std::string filament_type = config.option<ConfigOptionStrings>("filament_type")->values.at(filament_id);
             int filament_printable_status = config.option<ConfigOptionInts>("filament_printable")->values.at(filament_id);
@@ -1749,6 +1751,7 @@ bool PartPlate::check_flow_compatible_of_nozzle_and_filament(const DynamicPrintC
 
     std::string extruder_variant = extruder_variants[0];
     for (auto fil_idx : used_filaments){
+        if (fil_idx > int(filament_presets.size())) continue; // skip virtual (mixed) filaments
         int fil_id = fil_idx - 1;
 
         auto fil_preset = wxGetApp().preset_bundle->filaments.find_preset(filament_presets[fil_id]);
@@ -1782,10 +1785,11 @@ bool PartPlate::check_tpu_nozzle_has_multiple_filaments(const DynamicPrintConfig
 
     std::unordered_map<NozzleVolumeType, int> nozzle_fils;
     if (!used_filaments.empty()) {
+        std::vector<int> filament_map = get_real_filament_maps(config);
         for (auto filament_idx : used_filaments) {
-            int              filament_id  = filament_idx - 1;
-            std::vector<int> filament_map = get_real_filament_maps(config);
-            int              extruder_idx = filament_map[filament_id] - 1;
+            int filament_id = filament_idx - 1;
+            if (filament_id < 0 || filament_id >= int(filament_map.size())) continue; // skip virtual (mixed) filaments
+            int extruder_idx = filament_map[filament_id] - 1;
 
             NozzleVolumeType volume_type = (NozzleVolumeType) config.option<ConfigOptionEnumsGeneric>("nozzle_volume_type")->values.at(extruder_idx);
             nozzle_fils[volume_type]++;

@@ -1985,9 +1985,9 @@ bool GUI_App::check_networking_version()
     if (!network_ver.empty()) {
         BOOST_LOG_TRIVIAL(info) << "get_network_agent_version=" << network_ver;
     }
-    std::string studio_ver = SLIC3R_VERSION;
+    std::string expected_ver = BAMBU_NETWORK_AGENT_VERSION;
     if (network_ver.length() >= 8) {
-        if (network_ver.substr(0,8) == studio_ver.substr(0,8)) {
+        if (network_ver.substr(0,8) == expected_ver.substr(0,8)) {
             m_networking_compatible = true;
             return true;
         }

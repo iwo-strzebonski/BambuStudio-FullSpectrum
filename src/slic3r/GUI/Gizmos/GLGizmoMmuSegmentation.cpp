@@ -92,36 +92,8 @@ static std::vector<int> get_extruder_id_for_volumes(const ModelObject &model_obj
 
 void GLGizmoMmuSegmentation::init_extruders_data()
 {
-    m_extruders_colors       = wxGetApp().plater()->get_extruders_colors();
-    const size_t num_physical = m_extruders_colors.size();
-
-    // FullSpectrum: append blended colors for virtual mixed filaments
-    if (wxGetApp().preset_bundle != nullptr) {
-        const auto &mgr = wxGetApp().preset_bundle->mixed_filaments;
-        const size_t num_total = mgr.total_filaments(num_physical);
-        if (num_total > num_physical) {
-            m_extruders_colors.reserve(num_total);
-            for (size_t virt_id = num_physical + 1; virt_id <= num_total; ++virt_id) {
-                int mix_idx = mgr.mixed_index_from_filament_id(unsigned(virt_id), num_physical);
-                if (mix_idx >= 0 && size_t(mix_idx) < mgr.mixed_filaments().size()) {
-                    const auto &mf = mgr.mixed_filaments()[size_t(mix_idx)];
-                    if (mf.component_a > 0 && mf.component_a <= unsigned(num_physical) &&
-                        mf.component_b > 0 && mf.component_b <= unsigned(num_physical)) {
-                        const auto &ca = m_extruders_colors[size_t(mf.component_a - 1)];
-                        const auto &cb = m_extruders_colors[size_t(mf.component_b - 1)];
-                        float ratio = float(mf.mix_b_percent) / 100.f;
-                        float r, g, b;
-                        filament_mixer_lerp_float(ca[0], ca[1], ca[2], cb[0], cb[1], cb[2], ratio, &r, &g, &b);
-                        m_extruders_colors.push_back({r, g, b, 1.f});
-                    } else {
-                        m_extruders_colors.push_back({0.5f, 0.5f, 0.5f, 1.f});
-                    }
-                } else {
-                    m_extruders_colors.push_back({0.5f, 0.5f, 0.5f, 1.f});
-                }
-            }
-        }
-    }
+    // FullSpectrum: get_extruders_colors() now includes virtual mixed filaments
+    m_extruders_colors = wxGetApp().plater()->get_extruders_colors();
 
     size_t n_extruder_colors = std::min((size_t) EnforcerBlockerType::ExtruderMax, m_extruders_colors.size());
     if (n_extruder_colors == 2 || m_selected_extruder_idx >= n_extruder_colors) {
@@ -263,13 +235,16 @@ void GLGizmoMmuSegmentation::set_painter_gizmo_data(const Selection &selection)
 
     ModelObject* model_object = m_c->selection_info()->model_object();
     int prev_extruders_count = int(m_extruders_colors.size());
-    if (prev_extruders_count != wxGetApp().filaments_cnt()) {
-        if (wxGetApp().filaments_cnt() > int(GLGizmoMmuSegmentation::EXTRUDERS_LIMIT))
+    // FullSpectrum: compare against total count including virtual (mixed) filaments
+    int current_total = int(wxGetApp().preset_bundle->mixed_filaments.total_filaments(
+        size_t(std::max(wxGetApp().filaments_cnt(), 0))));
+    if (prev_extruders_count != current_total) {
+        if (current_total > int(GLGizmoMmuSegmentation::EXTRUDERS_LIMIT))
             show_notification_extruders_limit_exceeded();
 
         this->init_extruders_data();
         // Reinitialize triangle selectors because of change of extruder count need also change the size of GLIndexedVertexArray
-        if (prev_extruders_count != wxGetApp().filaments_cnt())
+        if (prev_extruders_count != current_total)
             this->init_model_triangle_selectors();
     } else if (wxGetApp().plater()->get_extruders_colors() != m_extruders_colors) {
         this->init_extruders_data();
@@ -1106,8 +1081,11 @@ void GLGizmoMmuSegmentation::update_from_model_object(bool first_update)
 
     // Extruder colors need to be reloaded before calling init_model_triangle_selectors to render painted triangles
     // using colors from loaded 3MF and not from printer profile in Slicer.
+    // FullSpectrum: compare against total count including virtual (mixed) filaments
     if (int prev_extruders_count = int(m_extruders_colors.size());
-        prev_extruders_count != wxGetApp().filaments_cnt() || wxGetApp().plater()->get_extruders_colors() != m_extruders_colors)
+        prev_extruders_count != int(wxGetApp().preset_bundle->mixed_filaments.total_filaments(
+            size_t(std::max(wxGetApp().filaments_cnt(), 0))))
+        || wxGetApp().plater()->get_extruders_colors() != m_extruders_colors)
         this->init_extruders_data();
 
     this->init_model_triangle_selectors();

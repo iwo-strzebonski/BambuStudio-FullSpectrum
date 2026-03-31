@@ -778,9 +778,12 @@ void ToolOrdering::collect_extruders(const PrintObject &object, const std::vecto
                 }
 
                 if (something_nonoverriddable){
-               		layer_tools.extruders.emplace_back((extruder_override == 0) ? region.config().wall_filament.value : extruder_override);
+                    const unsigned int wall_ext = resolve_mixed(
+                        (extruder_override == 0) ? region.config().wall_filament.value : extruder_override,
+                        layerCount, float(layer->print_z), float(layer->height));
+               		layer_tools.extruders.emplace_back(wall_ext);
                     if (layerCount == 0) {
-                        firstLayerExtruders.emplace_back((extruder_override == 0) ? region.config().wall_filament.value : extruder_override);
+                        firstLayerExtruders.emplace_back(wall_ext);
                     }
                 }
 
@@ -811,11 +814,14 @@ void ToolOrdering::collect_extruders(const PrintObject &object, const std::vecto
             if (something_nonoverriddable) {
             	if (extruder_override == 0) {
 	                if (has_solid_infill)
-	                    layer_tools.extruders.emplace_back(region.config().solid_infill_filament);
+	                    layer_tools.extruders.emplace_back(resolve_mixed(region.config().solid_infill_filament,
+                                                                         layerCount, float(layer->print_z), float(layer->height)));
 	                if (has_infill)
-	                    layer_tools.extruders.emplace_back(region.config().sparse_infill_filament);
+	                    layer_tools.extruders.emplace_back(resolve_mixed(region.config().sparse_infill_filament,
+                                                                         layerCount, float(layer->print_z), float(layer->height)));
             	} else if (has_solid_infill || has_infill)
-            		layer_tools.extruders.emplace_back(extruder_override);
+            		layer_tools.extruders.emplace_back(resolve_mixed(extruder_override,
+                                                                      layerCount, float(layer->print_z), float(layer->height)));
             }
             if (has_solid_infill || has_infill)
                 layer_tools.has_object = true;
@@ -841,8 +847,10 @@ void ToolOrdering::collect_extruders(const PrintObject &object, const std::vecto
             if (er == erSupportMaterialInterface) has_interface = true;
             if (has_support && has_interface) break;
         }
-        unsigned int extruder_support   = object.config().support_filament.value;
-        unsigned int extruder_interface = object.config().support_interface_filament.value;
+        unsigned int extruder_support   = resolve_mixed(object.config().support_filament.value,
+                                                         layer_tools.layer_index, float(support_layer->print_z), float(support_layer->height));
+        unsigned int extruder_interface = resolve_mixed(object.config().support_interface_filament.value,
+                                                       layer_tools.layer_index, float(support_layer->print_z), float(support_layer->height));
         if (has_support) {
             if (extruder_support > 0 || !has_interface || extruder_interface == 0 || layer_tools.has_object)
                 layer_tools.extruders.push_back(extruder_support);

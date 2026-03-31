@@ -1411,6 +1411,51 @@ Print::ApplyStatus Print::apply(const Model &model, DynamicPrintConfig new_full_
         }
     }
 
+    // FullSpectrum: Regenerate mixed (virtual) filaments from physical filament
+    // colours so the Print-side manager is populated for ToolOrdering / GCode.
+    {
+        int   mixed_gradient_mode   = 0;
+        float mixed_height_lower    = 0.04f;
+        float mixed_height_upper    = 0.16f;
+        bool  mixed_advanced_dither = false;
+        std::string mixed_custom_definitions;
+        if (new_full_config.has("mixed_filament_gradient_mode")) {
+            if (const auto *opt = new_full_config.option<ConfigOptionBool>("mixed_filament_gradient_mode"))
+                mixed_gradient_mode = opt->value ? 1 : 0;
+            else
+                mixed_gradient_mode = new_full_config.opt_int("mixed_filament_gradient_mode");
+        }
+        if (new_full_config.has("mixed_filament_height_lower_bound"))
+            mixed_height_lower = float(new_full_config.opt_float("mixed_filament_height_lower_bound"));
+        if (new_full_config.has("mixed_filament_height_upper_bound"))
+            mixed_height_upper = float(new_full_config.opt_float("mixed_filament_height_upper_bound"));
+        if (new_full_config.has("mixed_filament_advanced_dithering")) {
+            if (const auto *opt = new_full_config.option<ConfigOptionBool>("mixed_filament_advanced_dithering"))
+                mixed_advanced_dither = opt->value;
+            else
+                mixed_advanced_dither = (new_full_config.opt_int("mixed_filament_advanced_dithering") != 0);
+        }
+        if (new_full_config.has("mixed_filament_definitions"))
+            mixed_custom_definitions = new_full_config.opt_string("mixed_filament_definitions");
+
+        mixed_gradient_mode = std::clamp(mixed_gradient_mode, 0, 1);
+        mixed_height_lower  = std::max(0.01f, mixed_height_lower);
+        mixed_height_upper  = std::max(mixed_height_lower, mixed_height_upper);
+
+        std::vector<std::string> physical_filament_colors = m_config.filament_colour.values;
+        physical_filament_colors.resize(num_extruders, "#26A69A");
+        m_mixed_filament_mgr.clear_custom_entries();
+        m_mixed_filament_mgr.auto_generate(physical_filament_colors);
+        m_mixed_filament_mgr.load_custom_entries(mixed_custom_definitions, physical_filament_colors);
+        m_mixed_filament_mgr.apply_gradient_settings(mixed_gradient_mode,
+                                                     mixed_height_lower,
+                                                     mixed_height_upper,
+                                                     mixed_advanced_dither);
+    }
+    // Total filaments = physical extruders + enabled mixed (virtual) filaments.
+    // Used for extruder ID clamping so that virtual IDs are accepted.
+    const size_t num_total_filaments = m_mixed_filament_mgr.total_filaments(num_extruders);
+
     ModelObjectStatusDB model_object_status_db;
 
     // 1) Synchronize model objects.
@@ -1597,7 +1642,7 @@ Print::ApplyStatus Print::apply(const Model &model, DynamicPrintConfig new_full_
 			if (object_config_changed)
 				model_object.config.assign_config(model_object_new.config);
             if (! object_diff.empty() || object_config_changed || num_extruders_changed ) {
-                PrintObjectConfig new_config = PrintObject::object_config_from_model_object(m_default_object_config, model_object, num_extruders, print_variant_index);
+                PrintObjectConfig new_config = PrintObject::object_config_from_model_object(m_default_object_config, model_object, num_total_filaments, print_variant_index);
                 for (const PrintObjectStatus &print_object_status : print_object_status_db.get_range(model_object)) {
                     t_config_option_keys diff = print_object_status.print_object->config().diff(new_config);
                     if (! diff.empty()) {
@@ -1662,10 +1707,10 @@ Print::ApplyStatus Print::apply(const Model &model, DynamicPrintConfig new_full_
             // Generate a list of trafos and XY offsets for instances of a ModelObject
             // Producing the config for PrintObject on demand, caching it at print_object_last.
             const PrintObject *print_object_last = nullptr;
-            auto print_object_apply_config = [this, &print_object_last, model_object, num_extruders, &print_variant_index](PrintObject *print_object) {
+            auto print_object_apply_config = [this, &print_object_last, model_object, num_total_filaments, &print_variant_index](PrintObject *print_object) {
                 print_object->config_apply(print_object_last ?
                     print_object_last->config() :
-                    PrintObject::object_config_from_model_object(m_default_object_config, *model_object, num_extruders, print_variant_index));
+                    PrintObject::object_config_from_model_object(m_default_object_config, *model_object, num_total_filaments, print_variant_index));
                 print_object_last = print_object;
             };
             if (old.empty()) {
@@ -1795,10 +1840,11 @@ Print::ApplyStatus Print::apply(const Model &model, DynamicPrintConfig new_full_
         }
         std::vector<unsigned int> painting_extruders;
         if (const auto &volumes = print_object.model_object()->volumes;
-            num_extruders  > 1 &&
+            num_total_filaments > 1 &&
             std::find_if(volumes.begin(), volumes.end(), [](const ModelVolume *v) { return ! v->mmu_segmentation_facets.empty(); }) != volumes.end()) {
-            //FIXME be more specific! Don't enumerate extruders that are not used for painting!
-            painting_extruders.assign(num_extruders , 0);
+            // Include all filament channels (physical + virtual) so painted
+            // regions with virtual filament IDs are not discarded.
+            painting_extruders.assign(num_total_filaments, 0);
             std::iota(painting_extruders.begin(), painting_extruders.end(), 1);
         }
         if (model_object_status.print_object_regions_status == ModelObjectStatus::PrintObjectRegionsStatus::Valid) {
@@ -1817,7 +1863,7 @@ Print::ApplyStatus Print::apply(const Model &model, DynamicPrintConfig new_full_
                 verify_update_print_object_regions(
                     print_object.model_object()->volumes,
                     m_default_region_config,
-                    num_extruders ,
+                    num_total_filaments,
                     painting_extruders,
                     *print_object_regions,
                     [it_print_object, it_print_object_end, &update_apply_status](const PrintRegionConfig &old_config, const PrintRegionConfig &new_config, const t_config_option_keys &diff_keys) {
@@ -1844,7 +1890,7 @@ Print::ApplyStatus Print::apply(const Model &model, DynamicPrintConfig new_full_
                 LayerRanges(print_object.model_object()->layer_config_ranges),
                 m_default_region_config,
                 model_object_status.print_instances.front().trafo,
-                num_extruders ,
+                num_total_filaments,
                 print_object.is_mm_painted() ? 0.f : float(print_object.config().xy_contour_compensation.value),
                 painting_extruders,
                 print_variant_index,

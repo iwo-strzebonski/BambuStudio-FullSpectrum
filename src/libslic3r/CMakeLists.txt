@@ -113,6 +113,8 @@ set(lisbslic3r_sources
     Fill/FillHoneycomb.hpp
     Fill/FillGyroid.cpp
     Fill/FillGyroid.hpp
+    Fill/FillSchwartzP.cpp
+    Fill/FillSchwartzP.hpp
     Fill/FillPlanePath.cpp
     Fill/FillPlanePath.hpp
     Fill/FillLine.cpp

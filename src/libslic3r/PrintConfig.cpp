@@ -188,6 +188,7 @@ static t_config_enum_values s_keys_map_InfillPattern {
     { "gyroid",             ipGyroid },
     { "honeycomb",          ipHoneycomb },
     { "adaptivecubic",      ipAdaptiveCubic },
+    { "adaptivecuboid",     ipAdaptiveCuboid },
     { "monotonic",          ipMonotonic },
     { "monotonicline",      ipMonotonicLine },
     { "alignedrectilinear", ipAlignedRectilinear },
@@ -201,7 +202,9 @@ static t_config_enum_values s_keys_map_InfillPattern {
     { "zigzag",             ipZigZag },
     { "crosszag",           ipCrossZag },
     { "lockedzag",          ipLockedZag },
-    { "2dlattice",          ip2DLattice  }
+    { "2dlattice",          ip2DLattice  },
+    { "crosslaminate",      ipCrossLaminate },
+    { "schwartzp",          ipSchwartzP }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(InfillPattern)
 
@@ -2545,6 +2548,7 @@ void PrintConfigDef::init_fff_params()
     def->enum_values.push_back("gyroid");
     def->enum_values.push_back("honeycomb");
     def->enum_values.push_back("adaptivecubic");
+    def->enum_values.push_back("adaptivecuboid");
     def->enum_values.push_back("alignedrectilinear");
     def->enum_values.push_back("3dhoneycomb");
     def->enum_values.push_back("hilbertcurve");
@@ -2557,6 +2561,8 @@ void PrintConfigDef::init_fff_params()
     def->enum_values.push_back("crosszag");
     def->enum_values.push_back("lockedzag");
     def->enum_values.push_back("2dlattice");
+    def->enum_values.push_back("crosslaminate");
+    def->enum_values.push_back("schwartzp");
     def->enum_labels.push_back(L("Concentric"));
     def->enum_labels.push_back(L("Rectilinear"));
     def->enum_labels.push_back(L("Grid"));
@@ -2567,6 +2573,7 @@ void PrintConfigDef::init_fff_params()
     def->enum_labels.push_back(L("Gyroid"));
     def->enum_labels.push_back(L("Honeycomb"));
     def->enum_labels.push_back(L("Adaptive Cubic"));
+    def->enum_labels.push_back(L("Adaptive Cuboid"));
     def->enum_labels.push_back(L("Aligned Rectilinear"));
     def->enum_labels.push_back(L("3D Honeycomb"));
     def->enum_labels.push_back(L("Hilbert Curve"));
@@ -2579,7 +2586,20 @@ void PrintConfigDef::init_fff_params()
     def->enum_labels.push_back(L("Cross Zag"));
     def->enum_labels.push_back(L("Locked Zag"));
     def->enum_labels.push_back(L("2D Lattice"));
+    def->enum_labels.push_back(L("Cross Laminate"));
+    def->enum_labels.push_back(L("Schwartz P"));
     def->set_default_value(new ConfigOptionEnum<InfillPattern>(ipCubic));
+
+    def           = this->add("adaptive_cuboid_z_ratio", coFloat);
+    def->label    = L("Adaptive cuboid Z ratio");
+    def->category = L("Strength");
+    def->tooltip  = L("Vertical stretch factor for the Adaptive Cuboid infill pattern. Values greater than 1 "
+                      "stretch the infill cells along the Z axis, producing taller cuboid cells that use less "
+                      "material vertically while maintaining horizontal strength.");
+    def->min      = 1.0;
+    def->max      = 10.0;
+    def->mode     = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(1.0));
 
     def                = this->add("locked_skin_infill_pattern", coEnum);
     def->label         = L("Skin infill pattern");

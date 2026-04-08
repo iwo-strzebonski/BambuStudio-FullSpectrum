@@ -243,7 +243,8 @@ std::vector<SurfaceFill> group_fills(const Layer &layer, LockRegionParam &lock_p
                 bool support_multiline_infill = params.pattern == ipCubic || params.pattern == ipGrid || params.pattern == ipRectilinear || params.pattern == ipStars ||
                                                 params.pattern == ipAlignedRectilinear || params.pattern == ipGyroid || params.pattern == ipHoneycomb ||
                                                 params.pattern == ipLightning || params.pattern == ip3DHoneycomb || params.pattern == ipAdaptiveCubic ||
-                                                params.pattern == ipAdaptiveCuboid || params.pattern == ipSupportCubic;
+                                                params.pattern == ipAdaptiveCuboid || params.pattern == ipSupportCubic ||
+                                                params.pattern == ipCrossLaminate || params.pattern == ipSchwartzP;
                 params.multiline = (params.extrusion_role == erInternalInfill && support_multiline_infill) ? int(region_config.fill_multiline) : 1;
 
 		        // Calculate the actual flow we'll be using for this infill.
@@ -809,7 +810,9 @@ Polylines Layer::generate_sparse_infill_polylines_for_anchoring(FillAdaptive::Oc
         case ipZigZag:
         case ipCrossZag:
         case ip2DLattice:
-		case ipLockedZag: break;
+		case ipLockedZag:
+		case ipCrossLaminate:
+		case ipSchwartzP: break;
         }
 
 		// Create the filler object.

@@ -44,6 +44,14 @@ protected:
     virtual float _layer_angle(size_t idx) const override { return 0.f; }
 };
 
+class FillCrossLaminate : public FillRectilinear {
+public:
+    Fill* clone() const override { return new FillCrossLaminate(*this); }
+    ~FillCrossLaminate() override = default;
+    Polylines fill_surface(const Surface *surface, const FillParams &params) override;
+    bool is_self_crossing() override { return false; }
+};
+
 class FillMonotonic : public FillRectilinear
 {
 public:

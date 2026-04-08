@@ -2711,7 +2711,7 @@ Sidebar::Sidebar(Plater *parent)
     p->m_sizer_mixed_filaments_content = new wxBoxSizer(wxVERTICAL);
     p->m_sizer_mixed_filaments_content->AddSpacer(FromDIP(12));
     p->m_panel_mixed_filaments_content->SetSizer(p->m_sizer_mixed_filaments_content);
-    p->m_panel_mixed_filaments_content->SetMaxSize({-1, FromDIP(300)});
+    p->m_panel_mixed_filaments_content->SetMaxSize({-1, FromDIP(600)});
     p->m_panel_mixed_filaments_content->Layout();
     scrolled_sizer->Add(p->m_panel_mixed_filaments_content, 0, wxEXPAND, 0);
 
@@ -2720,7 +2720,7 @@ Sidebar::Sidebar(Plater *parent)
         int btn_x = p->m_btn_add_gradient->GetPosition().x;
         if (e.GetPosition().x > btn_x) return;
         if (p->m_panel_mixed_filaments_content->GetMaxHeight() == 0) {
-            p->m_panel_mixed_filaments_content->SetMaxSize({-1, FromDIP(300)});
+            p->m_panel_mixed_filaments_content->SetMaxSize({-1, FromDIP(600)});
             auto min_size = p->m_panel_mixed_filaments_content->GetSizer()->GetMinSize();
             if (min_size.y > p->m_panel_mixed_filaments_content->GetMaxHeight())
                 min_size.y = p->m_panel_mixed_filaments_content->GetMaxHeight();
@@ -2731,8 +2731,7 @@ Sidebar::Sidebar(Plater *parent)
             p->m_panel_mixed_filaments_content->SetMaxSize({-1, 0});
             p->m_mixed_filaments_collapsed = true;
         }
-        p->m_staticText_mixed_filaments->SetLabel(
-            p->m_mixed_filaments_collapsed ? _L("Mixed Filaments  \u25B6") : _L("Mixed Filaments  \u25BC"));
+
         m_scrolled_sizer->Layout();
         e.Skip();
     });

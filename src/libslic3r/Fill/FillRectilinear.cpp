@@ -3157,6 +3157,19 @@ Polylines FillCubic::fill_surface(const Surface *surface, const FillParams &para
     return polylines_out;
 }
 
+Polylines FillCrossLaminate::fill_surface(const Surface *surface, const FillParams &params)
+{
+    // Rotate 0°/45°/90°/135° each layer for a cross-laminate (plywood-like) stacking.
+    Polylines polylines_out;
+    float angle = float((this->layer_id % 4) * M_PI / 4.0);
+    if (! this->fill_surface_by_multilines(
+            surface, params,
+            { { angle, 0.f } },
+            polylines_out))
+        BOOST_LOG_TRIVIAL(error) << "FillCrossLaminate::fill_surface() failed to fill a region.";
+    return polylines_out;
+}
+
 Polylines Fill2DLattice::fill_surface(const Surface *surface, const FillParams &params)
 {
     Polylines polylines_out;

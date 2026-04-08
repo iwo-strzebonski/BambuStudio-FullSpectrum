@@ -1000,7 +1000,13 @@ static std::vector<std::string> s_Preset_print_options {
     "exclude_object", "override_filament_scarf_seam_setting", "seam_slope_type", "seam_slope_conditional", "scarf_angle_threshold",
     "seam_slope_start_height", "seam_slope_entire_loop", "seam_slope_min_length",
     "seam_slope_steps", "seam_slope_inner_walls", "role_base_wipe_speed", "seam_slope_gap", "precise_outer_wall",
-    "interlocking_beam", "interlocking_orientation", "interlocking_beam_layer_count", "interlocking_depth", "interlocking_boundary_avoidance", "interlocking_beam_width", "embedding_wall_into_infill" };
+    "interlocking_beam", "interlocking_orientation", "interlocking_beam_layer_count", "interlocking_depth", "interlocking_boundary_avoidance", "interlocking_beam_width", "embedding_wall_into_infill",
+    // FullSpectrum: Mixed Filament options
+    "mixed_filament_gradient_mode", "mixed_filament_height_lower_bound", "mixed_filament_height_upper_bound",
+    "mixed_filament_advanced_dithering", "mixed_filament_pointillism_pixel_size", "mixed_filament_pointillism_line_gap",
+    "mixed_filament_surface_indentation", "dithering_z_step_size", "dithering_local_z_mode",
+    "dithering_step_painted_zones_only", "mixed_filament_definitions",
+    "dither_top_surfaces", "surface_dither_pixel_size", "surface_dither_line_gap" };
 
 static std::vector<std::string> s_Preset_filament_options{/*"filament_colour", */ "default_filament_colour", "required_nozzle_HRC", "filament_diameter", "volumetric_speed_coefficients", "filament_type",
                                                           "filament_soluble", "filament_is_support", "filament_printable", "filament_scarf_seam_type", "filament_scarf_height",

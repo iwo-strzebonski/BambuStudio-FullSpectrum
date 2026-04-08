@@ -2238,7 +2238,10 @@ void Tab::on_value_change(const std::string& opt_key, const boost::any& value)
          opt_key == "dithering_z_step_size" ||
          opt_key == "dithering_local_z_mode" ||
          opt_key == "dithering_step_painted_zones_only" ||
-         opt_key == "mixed_filament_definitions")) {
+         opt_key == "mixed_filament_definitions" ||
+         opt_key == "dither_top_surfaces" ||
+         opt_key == "surface_dither_pixel_size" ||
+         opt_key == "surface_dither_line_gap")) {
         DynamicPrintConfig &project_cfg = wxGetApp().preset_bundle->project_config;
         if (const ConfigOption *opt = m_config->option(opt_key))
             project_cfg.set_key_value(opt_key, opt->clone());
@@ -2970,6 +2973,9 @@ void TabPrint::build()
         optgroup->append_single_option_line("dithering_z_step_size");
         optgroup->append_single_option_line("dithering_local_z_mode");
         optgroup->append_single_option_line("dithering_step_painted_zones_only");
+        optgroup->append_single_option_line("dither_top_surfaces");
+        optgroup->append_single_option_line("surface_dither_pixel_size");
+        optgroup->append_single_option_line("surface_dither_line_gap");
 
         optgroup = page->new_optgroup(L("G-code output"), L"param_gcode");
         optgroup->append_single_option_line("reduce_infill_retraction");

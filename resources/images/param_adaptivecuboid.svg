@@ -1,0 +1,23 @@
+<svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0)">
+<!-- Adaptive cuboid: like adaptive cubic but with vertically stretched cells -->
+<path d="M5.41 5.96L6.10 7.80M6.10 7.80L5.28 9.25M6.10 7.80H7.61" stroke="#ACACAC" stroke-width="0.5" stroke-linecap="round"/>
+<path d="M1.70 3.00L2.39 4.84M2.39 4.84L1.57 6.34M2.39 4.84H3.90" stroke="#ACACAC" stroke-width="0.5" stroke-linecap="round"/>
+<path d="M8.02 3.50L8.71 5.30M8.71 5.30L7.90 6.70M8.71 5.30H9.22" stroke="#ACACAC" stroke-width="0.5" stroke-linecap="round"/>
+<path d="M2.18 0.75L2.56 2.00M2.56 2.00L2.00 3.20M2.56 2.00H4.07" stroke="#ACACAC" stroke-width="0.5" stroke-linecap="round"/>
+<path d="M5.28 1.00L5.97 2.80M5.97 2.80L5.15 4.30M5.97 2.80H7.48" stroke="#ACACAC" stroke-width="0.5" stroke-linecap="round"/>
+<line x1="4.32" y1="1.00" x2="4.32" y2="9.12" stroke="#262E30" stroke-width="0.5"/>
+<line x1="7.73" y1="1.00" x2="7.73" y2="9.12" stroke="#262E30" stroke-width="0.5"/>
+<path d="M6.31 0.76L0.92 4.80" stroke="#262E30" stroke-width="0.5" stroke-linecap="round"/>
+<path d="M9.13 7.00L6.40 9.25" stroke="#262E30" stroke-width="0.5" stroke-linecap="round"/>
+<path d="M9.18 2.80L0.84 8.52" stroke="#262E30" stroke-width="0.5" stroke-linecap="round"/>
+<path d="M9.19 7.20L0.87 1.50" stroke="#262E30" stroke-width="0.5" stroke-linecap="round"/>
+<path d="M6.09 9.17L0.87 5.80" stroke="#262E30" stroke-width="0.5" stroke-linecap="round"/>
+<rect x="0.75" y="0.75" width="8.5" height="8.5" rx="0.25" stroke="#262E30" stroke-width="0.5"/>
+</g>
+<defs>
+<clipPath id="clip0">
+<rect width="10" height="10" fill="white"/>
+</clipPath>
+</defs>
+</svg>

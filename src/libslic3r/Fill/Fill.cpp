@@ -812,7 +812,9 @@ Polylines Layer::generate_sparse_infill_polylines_for_anchoring(FillAdaptive::Oc
         case ip2DLattice:
 		case ipLockedZag:
 		case ipCrossLaminate:
-		case ipSchwartzP: break;
+		case ipSchwartzP:
+		case ipHilbertCurve3D:
+		case ipVoronoiOrganic: break;
         }
 
 		// Create the filler object.

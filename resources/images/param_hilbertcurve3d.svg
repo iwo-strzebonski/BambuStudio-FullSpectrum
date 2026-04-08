@@ -1,0 +1,21 @@
+<svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0)">
+<!-- Hilbert Curve 3D: space-filling curve with 3D structure -->
+<path d="M1.5 1.5 H3.0 V3.0 H1.5" stroke="#262E30" stroke-width="0.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M1.5 3.0 V5.0 H3.0 V3.0" stroke="#ACACAC" stroke-width="0.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3.0 5.0 H5.0 V3.0 H3.0" stroke="#262E30" stroke-width="0.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M5.0 3.0 V1.5 H7.0 V3.0" stroke="#ACACAC" stroke-width="0.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.0 3.0 H8.5 V1.5 H7.0" stroke="#262E30" stroke-width="0.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M5.0 5.0 V7.0 H3.0 V5.0" stroke="#ACACAC" stroke-width="0.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M5.0 7.0 H7.0 V5.0 H5.0" stroke="#262E30" stroke-width="0.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.0 5.0 H8.5 V7.0 H7.0" stroke="#ACACAC" stroke-width="0.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M3.0 7.0 V8.5 H1.5 V7.0" stroke="#262E30" stroke-width="0.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.0 7.0 V8.5 H8.5 V7.0" stroke="#262E30" stroke-width="0.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="0.75" y="0.75" width="8.5" height="8.5" rx="0.25" stroke="#262E30" stroke-width="0.5"/>
+</g>
+<defs>
+<clipPath id="clip0">
+<rect width="10" height="10" fill="white"/>
+</clipPath>
+</defs>
+</svg>

@@ -4100,6 +4100,36 @@ void PrintConfigDef::init_fff_params()
     def->mode = comAdvanced;
     def->set_default_value(new ConfigOptionString(""));
 
+    def = this->add("dither_top_surfaces", coBool);
+    def->label = L("Dither external surfaces");
+    def->category = L("Others");
+    def->tooltip = L("When enabled, top and bottom surfaces painted with a mixed filament "
+                     "receive XY pointillisme dithering even when the mixed filament uses "
+                     "layer-cycle mode. This makes flat surfaces show both colours instead of "
+                     "a single solid colour.");
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionBool(true));
+
+    def = this->add("surface_dither_pixel_size", coFloat);
+    def->label = L("Surface dither pixel size");
+    def->category = L("Others");
+    def->tooltip = L("Length of one dithering segment on top/bottom surfaces. "
+                     "Set to 0 to use automatic nozzle-based sizing. "
+                     "Smaller values create finer colour blending but more tool changes.");
+    def->sidetext = "mm";
+    def->min = 0.;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0.0));
+
+    def = this->add("surface_dither_line_gap", coFloat);
+    def->label = L("Surface dither line gap");
+    def->category = L("Others");
+    def->tooltip = L("Non-extruded spacing between adjacent dithering segments on top/bottom surfaces.");
+    def->sidetext = "mm";
+    def->min = 0.;
+    def->mode = comAdvanced;
+    def->set_default_value(new ConfigOptionFloat(0.0));
+
     def = this->add("dithering_z_step_size", coFloat);
     def->label = L("Dithering Z step size");
     def->category = L("Others");

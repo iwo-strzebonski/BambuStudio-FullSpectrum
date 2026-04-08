@@ -243,7 +243,7 @@ std::vector<SurfaceFill> group_fills(const Layer &layer, LockRegionParam &lock_p
                 bool support_multiline_infill = params.pattern == ipCubic || params.pattern == ipGrid || params.pattern == ipRectilinear || params.pattern == ipStars ||
                                                 params.pattern == ipAlignedRectilinear || params.pattern == ipGyroid || params.pattern == ipHoneycomb ||
                                                 params.pattern == ipLightning || params.pattern == ip3DHoneycomb || params.pattern == ipAdaptiveCubic ||
-                                                params.pattern == ipSupportCubic;
+                                                params.pattern == ipAdaptiveCuboid || params.pattern == ipSupportCubic;
                 params.multiline = (params.extrusion_role == erInternalInfill && support_multiline_infill) ? int(region_config.fill_multiline) : 1;
 
 		        // Calculate the actual flow we'll be using for this infill.
@@ -610,6 +610,8 @@ void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive:
         f->z 		= this->print_z;
         f->angle 	= surface_fill.params.angle;
         f->adapt_fill_octree = (surface_fill.params.pattern == ipSupportCubic) ? support_fill_octree : adaptive_fill_octree;
+        if (surface_fill.params.pattern == ipAdaptiveCuboid)
+            f->z_stretch = this->regions()[surface_fill.region_id]->region().config().adaptive_cuboid_z_ratio.value;
         if (surface_fill.params.pattern == ipZigZag) {
             if (f->layer_id % 2 == 0)
                 f->angle -= surface_fill.params.infill_rotate_step * (f->layer_id / 2);
@@ -654,7 +656,7 @@ void Layer::make_fills(FillAdaptive::Octree* adaptive_fill_octree, FillAdaptive:
 				std::vector<SurfaceFill> lower_fills = group_fills(*lower_layer, temp_skin_inner_param);
 				bool detect_lower_sparse_lines = true;
 				for (auto& fill : lower_fills) {
-					if (fill.params.pattern == ipAdaptiveCubic || fill.params.pattern == ipLightning || fill.params.pattern == ipSupportCubic) {
+					if (fill.params.pattern == ipAdaptiveCubic || fill.params.pattern == ipAdaptiveCuboid || fill.params.pattern == ipLightning || fill.params.pattern == ipSupportCubic) {
 						detect_lower_sparse_lines = false;
 						break;
 					}
@@ -787,6 +789,7 @@ Polylines Layer::generate_sparse_infill_polylines_for_anchoring(FillAdaptive::Oc
 		//case ipEnsuring: continue; break;
 		case ipLightning:
 		case ipAdaptiveCubic:
+		case ipAdaptiveCuboid:
         case ipSupportCubic:
         case ipRectilinear:
         case ipMonotonic:
@@ -817,6 +820,8 @@ Polylines Layer::generate_sparse_infill_polylines_for_anchoring(FillAdaptive::Oc
 		f->angle = surface_fill.params.angle;
 		f->adapt_fill_octree = (surface_fill.params.pattern == ipSupportCubic) ? support_fill_octree : adaptive_fill_octree;
 
+		if (surface_fill.params.pattern == ipAdaptiveCuboid)
+			f->z_stretch = this->regions()[surface_fill.region_id]->region().config().adaptive_cuboid_z_ratio.value;
 
 		if (surface_fill.params.pattern == ipLightning)
 			dynamic_cast<FillLightning::Filler*>(f.get())->generator = lightning_generator;

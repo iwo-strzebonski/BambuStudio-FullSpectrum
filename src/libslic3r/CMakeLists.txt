@@ -99,6 +99,8 @@ set(lisbslic3r_sources
     Fill/Fill3DHoneycomb.hpp
     Fill/FillAdaptive.cpp
     Fill/FillAdaptive.hpp
+    Fill/FillAdaptiveCuboid.cpp
+    Fill/FillAdaptiveCuboid.hpp
     Fill/FillBase.cpp
     Fill/FillBase.hpp
     Fill/FillConcentric.cpp

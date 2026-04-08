@@ -129,6 +129,9 @@ public:
     // Octree builds on mesh for usage in the adaptive cubic infill
     FillAdaptive::Octree* adapt_fill_octree = nullptr;
 
+    // Z-axis stretch factor for adaptive cuboid infill
+    double z_stretch = 1.0;
+
     // BBS: all no overlap expolygons in same layer
     ExPolygons  no_overlap_expolygons;
 
@@ -171,6 +174,7 @@ public:
         loop_clipping         = f->loop_clipping;
         bounding_box          = f->bounding_box;
         adapt_fill_octree     = f->adapt_fill_octree;
+        z_stretch             = f->z_stretch;
         no_overlap_expolygons = f->no_overlap_expolygons;
     };
 

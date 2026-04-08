@@ -299,7 +299,7 @@ std::pair<double, double> adaptive_fill_line_spacing(const PrintObject &print_ob
     for (size_t region_id = 0; region_id < print_object.num_printing_regions(); ++ region_id) {
         const PrintRegionConfig &config                 = print_object.printing_region(region_id).config();
         bool                     nonempty               = config.sparse_infill_density > 0;
-        bool                     has_adaptive_infill    = nonempty && config.sparse_infill_pattern == ipAdaptiveCubic;
+        bool                     has_adaptive_infill    = nonempty && (config.sparse_infill_pattern == ipAdaptiveCubic || config.sparse_infill_pattern == ipAdaptiveCuboid);
         bool                     has_support_infill     = nonempty && config.sparse_infill_pattern == ipSupportCubic;
         double                   sparse_infill_line_width = config.sparse_infill_line_width;
         region_fill_data.push_back(RegionFillData({

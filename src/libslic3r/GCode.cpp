@@ -4246,6 +4246,74 @@ static std::vector<unsigned int> pointillism_sequence_for_row_for_gcode(const Mi
     return sequence;
 }
 
+// Like pointillism_sequence_for_row_for_gcode() but works for ANY distribution_mode.
+// Used to force XY dithering on top/bottom surfaces even when the mixed filament is
+// configured for LayerCycle (Z-dithering).  The only guard removed is the
+// distribution_mode != SameLayerPointillisme check.
+static std::vector<unsigned int> pointillism_sequence_for_surface_for_gcode(const MixedFilament& mf, size_t num_physical)
+{
+    if (!mf.enabled || num_physical == 0)
+        return {};
+
+    if (!mf.manual_pattern.empty())
+        return decode_manual_pattern_sequence_for_gcode(mf, num_physical);
+
+    const std::vector<unsigned int> gradient_ids = decode_gradient_component_ids_for_gcode(mf, num_physical);
+    if (gradient_ids.size() >= 2) {
+        const std::vector<int> gradient_weights = decode_gradient_component_weights_for_gcode(mf, gradient_ids.size());
+        const std::vector<unsigned int> weighted =
+            build_weighted_gradient_sequence_for_gcode(gradient_ids,
+                gradient_weights.empty() ? std::vector<int>(gradient_ids.size(), 1) : gradient_weights);
+        if (!weighted.empty())
+            return weighted;
+    }
+
+    if (mf.component_a < 1 || mf.component_a > num_physical ||
+        mf.component_b < 1 || mf.component_b > num_physical ||
+        mf.component_a == mf.component_b)
+        return {};
+
+    int ratio_a = std::max(0, mf.ratio_a);
+    int ratio_b = std::max(0, mf.ratio_b);
+    if (ratio_a == 0 && ratio_b == 0)
+        ratio_a = 1;
+    if (ratio_a > 0 && ratio_b > 0) {
+        const int g = std::gcd(ratio_a, ratio_b);
+        if (g > 1) {
+            ratio_a /= g;
+            ratio_b /= g;
+        }
+    }
+
+    constexpr int k_max_cycle = 24;
+    if (ratio_a + ratio_b > k_max_cycle) {
+        const double scale_f = double(k_max_cycle) / double(ratio_a + ratio_b);
+        ratio_a = std::max(1, int(std::round(double(ratio_a) * scale_f)));
+        ratio_b = std::max(1, int(std::round(double(ratio_b) * scale_f)));
+    }
+
+    const int cycle = std::max(1, ratio_a + ratio_b);
+    std::vector<unsigned int> sequence;
+    sequence.reserve(size_t(cycle));
+    for (int pos = 0; pos < cycle; ++pos) {
+        const int b_before = (pos * ratio_b) / cycle;
+        const int b_after  = ((pos + 1) * ratio_b) / cycle;
+        sequence.emplace_back((b_after > b_before) ? mf.component_b : mf.component_a);
+    }
+
+    bool seen_a = false;
+    bool seen_b = false;
+    for (const unsigned int extruder_id : sequence) {
+        seen_a = seen_a || extruder_id == mf.component_a;
+        seen_b = seen_b || extruder_id == mf.component_b;
+        if (seen_a && seen_b)
+            break;
+    }
+    if (!seen_a || !seen_b)
+        return {};
+    return sequence;
+}
+
 static void split_polyline_by_length_for_pointillism(const Polyline& src,
                                                      const double    split_length,
                                                      Polylines&      out)
@@ -4715,6 +4783,48 @@ GCode::LayerResult GCode::process_layer(
         return inserted.first->second.empty() ? nullptr : &inserted.first->second;
     };
 
+    // ---- Surface dithering context (top/bottom surfaces, independent pixel size) ----
+    const bool   surface_dither_enabled = m_config.dither_top_surfaces.value;
+    const double surface_dither_pixel_cfg = std::max(0.0, double(m_config.surface_dither_pixel_size.value));
+    const double surface_dither_seg_len_mm = surface_dither_pixel_cfg > EPSILON ?
+        std::max(0.10, surface_dither_pixel_cfg) :
+        std::max(0.60, 1.60 * nozzle_0_mm);
+    const double surface_dither_gap_cfg_mm = std::max(0.0, double(m_config.surface_dither_line_gap.value));
+    const double surface_dither_gap_mm = std::min(surface_dither_gap_cfg_mm, surface_dither_seg_len_mm * 0.90);
+    const double surface_dither_seg_len_scaled = std::max<double>(scale_(0.10), scale_(surface_dither_seg_len_mm));
+    const double surface_dither_gap_scaled     = std::max<double>(0.0, scale_(surface_dither_gap_mm));
+    std::map<unsigned int, std::vector<unsigned int>> surface_pointillism_cache;
+
+    // Returns true if the extrusion collection contains any top or bottom surface role.
+    auto collection_has_external_surface = [](const ExtrusionEntityCollection& entities) -> bool {
+        return std::any_of(entities.entities.begin(), entities.entities.end(),
+            [](const ExtrusionEntity* ee) {
+                return is_top_surface(ee->role()) || ee->role() == erBottomSurface;
+            });
+    };
+
+    // Surface-aware variant: always builds a sequence regardless of distribution_mode.
+    auto pointillism_sequence_for_surface_filament = [&](unsigned int filament_id_1based) -> const std::vector<unsigned int>* {
+        if (!surface_dither_enabled || filament_id_1based == 0 ||
+            layer_tools.mixed_mgr == nullptr || layer_tools.num_physical == 0)
+            return nullptr;
+        auto cache_it = surface_pointillism_cache.find(filament_id_1based);
+        if (cache_it != surface_pointillism_cache.end())
+            return cache_it->second.empty() ? nullptr : &cache_it->second;
+
+        std::vector<unsigned int> sequence;
+        if (layer_tools.mixed_mgr->is_mixed(filament_id_1based, layer_tools.num_physical)) {
+            const MixedFilament* mixed_row = layer_tools.mixed_mgr->mixed_filament_from_id(filament_id_1based, layer_tools.num_physical);
+            if (mixed_row != nullptr)
+                sequence = pointillism_sequence_for_surface_for_gcode(*mixed_row, layer_tools.num_physical);
+            if (unique_extruder_count_for_gcode(sequence, layer_tools.num_physical) < 2)
+                sequence.clear();
+        }
+
+        auto inserted = surface_pointillism_cache.emplace(filament_id_1based, std::move(sequence));
+        return inserted.first->second.empty() ? nullptr : &inserted.first->second;
+    };
+
     // ---- Local-Z dithering context setup ----
     constexpr double LOCAL_Z_PERIMETER_MASK_EXPAND_MM = 0.10;
     constexpr double LOCAL_Z_BASE_MASK_EXPAND_MM      = 0.04;
@@ -5054,6 +5164,21 @@ GCode::LayerResult GCode::process_layer(
                             const unsigned int configured_filament_id = configured_filament_id_1based(*filtered_extrusions, region);
                             const std::vector<unsigned int>* pointillism_sequence =
                                 is_anything_overridden ? nullptr : pointillism_sequence_for_filament(configured_filament_id);
+
+                            // Surface dithering: if the regular pointillism sequence is null
+                            // (e.g. LayerCycle mode) but the collection contains top/bottom
+                            // surface extrusions, try the surface-aware variant instead.
+                            bool using_surface_dither = false;
+                            if (pointillism_sequence == nullptr && !is_anything_overridden &&
+                                collection_has_external_surface(*filtered_extrusions)) {
+                                pointillism_sequence = pointillism_sequence_for_surface_filament(configured_filament_id);
+                                using_surface_dither = (pointillism_sequence != nullptr);
+                            }
+
+                            // Choose pixel size / gap: surface dithering uses its own params.
+                            const double active_seg_len = using_surface_dither ? surface_dither_seg_len_scaled : pointillism_segment_len_scaled;
+                            const double active_gap     = using_surface_dither ? surface_dither_gap_scaled     : pointillism_line_gap_scaled;
+
                             if (pointillism_sequence != nullptr) {
                                 std::vector<std::unique_ptr<ExtrusionEntityCollection>> split_by_extruder;
                                 PointillismPathSplitStats split_stats;
@@ -5062,8 +5187,8 @@ GCode::LayerResult GCode::process_layer(
                                 if (split_extrusion_collection_for_pointillism_paths(*filtered_extrusions,
                                                                                       *pointillism_sequence,
                                                                                       layer_tools.num_physical,
-                                                                                      pointillism_segment_len_scaled,
-                                                                                      pointillism_line_gap_scaled,
+                                                                                      active_seg_len,
+                                                                                      active_gap,
                                                                                       sequence_phase,
                                                                                       split_by_extruder,
                                                                                       split_stats) &&

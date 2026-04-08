@@ -20,6 +20,7 @@
 #include "FillLine.hpp"
 #include "FillRectilinear.hpp"
 #include "FillAdaptive.hpp"
+#include "FillAdaptiveCuboid.hpp"
 #include "FillLightning.hpp"
 // BBS: new infill pattern header
 #include "FillConcentricInternal.hpp"
@@ -50,6 +51,7 @@ Fill* Fill::new_from_type(const InfillPattern type)
     case ipHilbertCurve:        return new FillHilbertCurve();
     case ipOctagramSpiral:      return new FillOctagramSpiral();
     case ipAdaptiveCubic:       return new FillAdaptive::Filler();
+    case ipAdaptiveCuboid:      return new FillAdaptiveCuboid::Filler();
     case ipSupportCubic:        return new FillAdaptive::Filler();
     case ipSupportBase:         return new FillSupportBase();  // simply line fill
     case ipLightning:           return new FillLightning::Filler();

@@ -196,6 +196,7 @@ static t_config_enum_values s_keys_map_InfillPattern {
     { "hilbertcurve",       ipHilbertCurve },
     { "archimedeanchords",  ipArchimedeanChords },
     { "octagramspiral",     ipOctagramSpiral },
+    { "hilbertcurve3d",    ipHilbertCurve3D },
     { "supportcubic",       ipSupportCubic },
     { "lightning",          ipLightning },
     { "crosshatch",         ipCrossHatch},
@@ -204,7 +205,8 @@ static t_config_enum_values s_keys_map_InfillPattern {
     { "lockedzag",          ipLockedZag },
     { "2dlattice",          ip2DLattice  },
     { "crosslaminate",      ipCrossLaminate },
-    { "schwartzp",          ipSchwartzP }
+    { "schwartzp",          ipSchwartzP },
+    { "voronoiorganic",     ipVoronoiOrganic }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(InfillPattern)
 
@@ -1692,6 +1694,7 @@ void PrintConfigDef::init_fff_params()
     def->enum_values.push_back("hilbertcurve");
     def->enum_values.push_back("archimedeanchords");
     def->enum_values.push_back("octagramspiral");
+    def->enum_values.push_back("hilbertcurve3d");
     def->enum_labels.push_back(L("Concentric"));
     def->enum_labels.push_back(L("Rectilinear"));
     def->enum_labels.push_back(L("Monotonic"));
@@ -1700,6 +1703,7 @@ void PrintConfigDef::init_fff_params()
     def->enum_labels.push_back(L("Hilbert Curve"));
     def->enum_labels.push_back(L("Archimedean Chords"));
     def->enum_labels.push_back(L("Octagram Spiral"));
+    def->enum_labels.push_back(L("Hilbert Curve 3D"));
     def->set_default_value(new ConfigOptionEnum<InfillPattern>(ipRectilinear));
 
     def           = this->add("top_surface_density", coPercent);
@@ -2563,6 +2567,8 @@ void PrintConfigDef::init_fff_params()
     def->enum_values.push_back("2dlattice");
     def->enum_values.push_back("crosslaminate");
     def->enum_values.push_back("schwartzp");
+    def->enum_values.push_back("hilbertcurve3d");
+    def->enum_values.push_back("voronoiorganic");
     def->enum_labels.push_back(L("Concentric"));
     def->enum_labels.push_back(L("Rectilinear"));
     def->enum_labels.push_back(L("Grid"));
@@ -2588,6 +2594,8 @@ void PrintConfigDef::init_fff_params()
     def->enum_labels.push_back(L("2D Lattice"));
     def->enum_labels.push_back(L("Cross Laminate"));
     def->enum_labels.push_back(L("Schwartz P"));
+    def->enum_labels.push_back(L("Hilbert Curve 3D"));
+    def->enum_labels.push_back(L("Voronoi Organic"));
     def->set_default_value(new ConfigOptionEnum<InfillPattern>(ipCubic));
 
     def           = this->add("adaptive_cuboid_z_ratio", coFloat);
@@ -2623,6 +2631,7 @@ void PrintConfigDef::init_fff_params()
     def->enum_values.push_back("crosshatch");
     def->enum_values.push_back("zigzag");
     def->enum_values.push_back("crosszag");
+    def->enum_values.push_back("hilbertcurve3d");
     def->enum_labels.push_back(L("Concentric"));
     def->enum_labels.push_back(L("Rectilinear"));
     def->enum_labels.push_back(L("Grid"));
@@ -2640,6 +2649,7 @@ void PrintConfigDef::init_fff_params()
     def->enum_labels.push_back(L("Cross Hatch"));
     def->enum_labels.push_back(L("Zig Zag"));
     def->enum_labels.push_back(L("Cross Zag"));
+    def->enum_labels.push_back(L("Hilbert Curve 3D"));
     def->set_default_value(new ConfigOptionEnum<InfillPattern>(ipCrossZag));
 
     def                = this->add("locked_skeleton_infill_pattern", coEnum);
@@ -2664,6 +2674,7 @@ void PrintConfigDef::init_fff_params()
     def->enum_values.push_back("crosshatch");
     def->enum_values.push_back("zigzag");
     def->enum_values.push_back("crosszag");
+    def->enum_values.push_back("hilbertcurve3d");
     def->enum_labels.push_back(L("Concentric"));
     def->enum_labels.push_back(L("Rectilinear"));
     def->enum_labels.push_back(L("Grid"));
@@ -2681,6 +2692,7 @@ void PrintConfigDef::init_fff_params()
     def->enum_labels.push_back(L("Cross Hatch"));
     def->enum_labels.push_back(L("Zig Zag"));
     def->enum_labels.push_back(L("Cross Zag"));
+    def->enum_labels.push_back(L("Hilbert Curve 3D"));
     def->set_default_value(new ConfigOptionEnum<InfillPattern>(ipZigZag));
 
     def = this->add("top_surface_acceleration", coFloats);

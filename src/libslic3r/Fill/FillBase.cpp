@@ -17,6 +17,7 @@
 #include "Fill3DHoneycomb.hpp"
 #include "FillGyroid.hpp"
 #include "FillPlanePath.hpp"
+#include "FillHilbertCurve3D.hpp"
 #include "FillLine.hpp"
 #include "FillRectilinear.hpp"
 #include "FillAdaptive.hpp"
@@ -27,6 +28,7 @@
 #include "FillCrossHatch.hpp"
 #include "FillFloatingConcentric.hpp"
 #include "FillSchwartzP.hpp"
+#include "FillVoronoiOrganic.hpp"
 
 // #define INFILL_DEBUG_OUTPUT
 
@@ -51,6 +53,7 @@ Fill* Fill::new_from_type(const InfillPattern type)
     case ipArchimedeanChords:   return new FillArchimedeanChords();
     case ipHilbertCurve:        return new FillHilbertCurve();
     case ipOctagramSpiral:      return new FillOctagramSpiral();
+    case ipHilbertCurve3D:      return new FillHilbertCurve3D();
     case ipAdaptiveCubic:       return new FillAdaptive::Filler();
     case ipAdaptiveCuboid:      return new FillAdaptiveCuboid::Filler();
     case ipSupportCubic:        return new FillAdaptive::Filler();
@@ -67,6 +70,7 @@ Fill* Fill::new_from_type(const InfillPattern type)
     case ip2DLattice:           return new Fill2DLattice();
     case ipCrossLaminate:       return new FillCrossLaminate();
     case ipSchwartzP:           return new FillSchwartzP();
+    case ipVoronoiOrganic:      return new FillVoronoiOrganic();
     default: throw Slic3r::InvalidArgument("unknown type");
     }
 }

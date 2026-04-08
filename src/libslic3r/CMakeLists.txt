@@ -115,8 +115,12 @@ set(lisbslic3r_sources
     Fill/FillGyroid.hpp
     Fill/FillSchwartzP.cpp
     Fill/FillSchwartzP.hpp
+    Fill/FillVoronoiOrganic.cpp
+    Fill/FillVoronoiOrganic.hpp
     Fill/FillPlanePath.cpp
     Fill/FillPlanePath.hpp
+    Fill/FillHilbertCurve3D.cpp
+    Fill/FillHilbertCurve3D.hpp
     Fill/FillLine.cpp
     Fill/FillLine.hpp
     Fill/FillLightning.cpp

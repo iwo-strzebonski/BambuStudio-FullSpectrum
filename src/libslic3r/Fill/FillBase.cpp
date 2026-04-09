@@ -18,6 +18,7 @@
 #include "FillGyroid.hpp"
 #include "FillPlanePath.hpp"
 #include "FillHilbertCurve3D.hpp"
+#include "FillArchimedeanSpiral3D.hpp"
 #include "FillLine.hpp"
 #include "FillRectilinear.hpp"
 #include "FillAdaptive.hpp"
@@ -73,6 +74,7 @@ Fill* Fill::new_from_type(const InfillPattern type)
     case ipSchwartzP:           return new FillSchwartzP();
     case ipVoronoiOrganic:      return new FillVoronoiOrganic();
     case ipCellularFoam:        return new FillCellularFoam();
+    case ipArchimedeanSpiral3D: return new FillArchimedeanSpiral3D();
     default: throw Slic3r::InvalidArgument("unknown type");
     }
 }

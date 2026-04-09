@@ -207,7 +207,8 @@ static t_config_enum_values s_keys_map_InfillPattern {
     { "schwartzp",          ipSchwartzP },
     { "hilbertcurve3d",     ipHilbertCurve3D },
     { "voronoiorganic",     ipVoronoiOrganic },
-    { "cellularfoam",       ipCellularFoam }
+    { "cellularfoam",       ipCellularFoam },
+    { "archimedeanspiral3d", ipArchimedeanSpiral3D }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(InfillPattern)
 
@@ -2551,7 +2552,6 @@ void PrintConfigDef::init_fff_params()
     def->enum_values.push_back("gyroid");
     def->enum_values.push_back("honeycomb");
     def->enum_values.push_back("adaptivecubic");
-    def->enum_values.push_back("adaptivecuboid");
     def->enum_values.push_back("alignedrectilinear");
     def->enum_values.push_back("3dhoneycomb");
     def->enum_values.push_back("hilbertcurve");
@@ -2566,9 +2566,11 @@ void PrintConfigDef::init_fff_params()
     def->enum_values.push_back("2dlattice");
     def->enum_values.push_back("crosslaminate");
     def->enum_values.push_back("schwartzp");
+    def->enum_values.push_back("adaptivecuboid");
     def->enum_values.push_back("hilbertcurve3d");
     def->enum_values.push_back("voronoiorganic");
     def->enum_values.push_back("cellularfoam");
+    def->enum_values.push_back("archimedeanspiral3d");
     def->enum_labels.push_back(L("Concentric"));
     def->enum_labels.push_back(L("Rectilinear"));
     def->enum_labels.push_back(L("Grid"));
@@ -2579,7 +2581,6 @@ void PrintConfigDef::init_fff_params()
     def->enum_labels.push_back(L("Gyroid"));
     def->enum_labels.push_back(L("Honeycomb"));
     def->enum_labels.push_back(L("Adaptive Cubic"));
-    def->enum_labels.push_back(L("Adaptive Cuboid"));
     def->enum_labels.push_back(L("Aligned Rectilinear"));
     def->enum_labels.push_back(L("3D Honeycomb"));
     def->enum_labels.push_back(L("Hilbert Curve"));
@@ -2594,9 +2595,11 @@ void PrintConfigDef::init_fff_params()
     def->enum_labels.push_back(L("2D Lattice"));
     def->enum_labels.push_back(L("Cross Laminate"));
     def->enum_labels.push_back(L("Schwartz P"));
+    def->enum_labels.push_back(L("Adaptive Cuboid"));
     def->enum_labels.push_back(L("Hilbert Curve 3D"));
     def->enum_labels.push_back(L("Voronoi Organic"));
     def->enum_labels.push_back(L("Cellular Foam"));
+    def->enum_labels.push_back(L("Archimedean Spiral 3D"));
     def->set_default_value(new ConfigOptionEnum<InfillPattern>(ipCubic));
 
     def           = this->add("adaptive_cuboid_z_ratio", coFloat);

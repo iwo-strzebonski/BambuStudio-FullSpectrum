@@ -123,6 +123,8 @@ set(lisbslic3r_sources
     Fill/FillPlanePath.hpp
     Fill/FillHilbertCurve3D.cpp
     Fill/FillHilbertCurve3D.hpp
+    Fill/FillArchimedeanSpiral3D.cpp
+    Fill/FillArchimedeanSpiral3D.hpp
     Fill/FillLine.cpp
     Fill/FillLine.hpp
     Fill/FillLightning.cpp

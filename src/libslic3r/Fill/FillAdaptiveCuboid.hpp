@@ -18,12 +18,9 @@ public:
 
 protected:
     Fill* clone() const override { return new Filler(*this); }
-    void _fill_surface_single(
-        const FillParams                &params,
-        unsigned int                     thickness_layers,
-        const std::pair<float, Point>   &direction,
-        ExPolygon                        expolygon,
-        Polylines                       &polylines_out) override;
+    // _fill_surface_single is inherited from FillAdaptive::Filler.
+    // The cuboid Z-stretch is handled there via this->z_stretch,
+    // which is set from adaptive_cuboid_z_ratio config in Fill.cpp.
 };
 
 } // namespace FillAdaptiveCuboid

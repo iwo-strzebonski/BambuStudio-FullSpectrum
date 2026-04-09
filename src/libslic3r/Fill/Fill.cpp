@@ -814,9 +814,8 @@ Polylines Layer::generate_sparse_infill_polylines_for_anchoring(FillAdaptive::Oc
 		case ipCrossLaminate:
 		case ipSchwartzP:
 		case ipHilbertCurve3D:
-		case ipVoronoiOrganic: break;
-        }
-
+	case ipVoronoiOrganic:
+	case ipCellularFoam: break;
 		// Create the filler object.
 		std::unique_ptr<Fill> f = std::unique_ptr<Fill>(Fill::new_from_type(surface_fill.params.pattern));
 		f->set_bounding_box(bbox);

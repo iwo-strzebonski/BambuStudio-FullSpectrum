@@ -281,30 +281,65 @@ void FillHilbertCurve3D::_fill_surface_single(
         return;
 
     // Clip against the snug bounding box when aligning (same as FillPlanePath).
+    BoundingBox clip_bb = snug_bb;
+    clip_bb.translate(-shift.x(), -shift.y());
     if (align) {
-        BoundingBox snug_shifted = snug_bb;
-        snug_shifted.translate(-shift.x(), -shift.y());
         // Remove points outside snug bbox (simple pre-clip for performance).
         pts.erase(
             std::remove_if(pts.begin(), pts.end(),
-                           [&](const Point &p) { return !snug_shifted.contains(p); }),
+                           [&](const Point &p) { return !clip_bb.contains(p); }),
             pts.end());
     }
 
     if (pts.size() < 2)
         return;
 
-    Polyline polyline;
-    polyline.points = std::move(pts);
+    // The 3-D Hilbert curve only emits points whose Z matches the current
+    // layer; consecutive emitted points may be many grid cells apart in XY
+    // (because the curve visited off-layer cells in between).  Joining them
+    // with a straight segment produces long spanning lines that, after
+    // clipping to the expolygon, create spurious infill fragments near or on
+    // the perimeter boundary.
+    //
+    // Fix: split the point sequence into separate polylines whenever two
+    // consecutive points are more than ~1.5× the grid spacing apart in XY.
+    // Only genuinely adjacent Hilbert nodes form infill segments.
+    const double max_gap = distance_between_lines * 1.6;  // allow sqrt(2) diagonal
+    const double max_gap_sq = max_gap * max_gap;
 
-    Polylines polylines = intersection_pl(polyline, expolygon);
+    Polylines raw_polylines;
+    {
+        Polyline current;
+        current.points.push_back(pts.front());
+        for (size_t i = 1; i < pts.size(); ++i) {
+            double dx = double(pts[i].x()) - double(pts[i - 1].x());
+            double dy = double(pts[i].y()) - double(pts[i - 1].y());
+            if (dx * dx + dy * dy > max_gap_sq) {
+                // Break: emit current polyline if it has at least 2 points.
+                if (current.points.size() >= 2)
+                    raw_polylines.push_back(std::move(current));
+                current = Polyline();
+            }
+            current.points.push_back(pts[i]);
+        }
+        if (current.points.size() >= 2)
+            raw_polylines.push_back(std::move(current));
+    }
 
-    if (!polylines.empty()) {
+    if (raw_polylines.empty())
+        return;
+
+    // Clip each sub-polyline against the expolygon boundary.
+    Polylines clipped;
+    for (Polyline &pl : raw_polylines)
+        append(clipped, intersection_pl(pl, expolygon));
+
+    if (!clipped.empty()) {
         Polylines chained;
-        if (params.dont_connect() || params.density > 0.5 || polylines.size() <= 1)
-            chained = chain_polylines(std::move(polylines));
+        if (params.dont_connect() || params.density > 0.5 || clipped.size() <= 1)
+            chained = chain_polylines(std::move(clipped));
         else
-            connect_infill(std::move(polylines), expolygon, chained, this->spacing, params);
+            connect_infill(std::move(clipped), expolygon, chained, this->spacing, params);
 
         for (Polyline &pl : chained) {
             pl.translate(shift.x(), shift.y());

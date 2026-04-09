@@ -367,9 +367,10 @@ struct FillContext
         -(2.0 * M_PI) / 3.0
     };
 
-    FillContext(const Octree &octree, double z_position, int direction_idx) :
+    FillContext(const Octree &octree, double z_position, int direction_idx, double z_stretch = 1.0) :
         cubes_properties(octree.cubes_properties),
         z_position(z_position),
+        z_stretch(z_stretch),
         traversal_order(child_traversal_order[direction_idx]),
         cos_a(cos(direction_angles[direction_idx])),
         sin_a(sin(direction_angles[direction_idx]))
@@ -384,6 +385,8 @@ struct FillContext
     const std::vector<CubeProperties>  &cubes_properties;
     // Top of the current layer.
     const double                        z_position;
+    // Z stretch factor for cuboid cells (1.0 = cubic, >1 = taller cells).
+    const double                        z_stretch;
     // Order of traversal for this line direction.
     const std::array<int, 8>            traversal_order;
     // Rotation of the generated line for this line direction.
@@ -456,7 +459,9 @@ static void generate_infill_lines_recursive(
     assert(cube != nullptr);
 
     const std::vector<CubeProperties> &cubes_properties = context.cubes_properties;
-    const double z_diff     = context.z_position - cube->center.z();
+    // For z_stretch > 1 the cells are taller in Z: divide the difference by z_stretch
+    // so that lines appear at the correct physical Z position but over a larger Z range.
+    const double z_diff     = (context.z_position - cube->center.z()) / context.z_stretch;
     const double z_diff_abs = std::abs(z_diff);
 
     if (z_diff_abs > cubes_properties[depth].height / 2.)
@@ -1328,11 +1333,13 @@ void Filler::_fill_surface_single(
 
     Polylines all_polylines;
     {
-        // 3 contexts for three directions of infill lines
+        // 3 contexts for three directions of infill lines.
+        // z_stretch > 1 produces cuboid cells (taller in Z) by widening the Z window
+        // of each octree cube without shifting its physical position.
         std::array<FillContext, 3> contexts { 
-            FillContext { *adapt_fill_octree, this->z, 0 },
-            FillContext { *adapt_fill_octree, this->z, 1 },
-            FillContext { *adapt_fill_octree, this->z, 2 }
+            FillContext { *adapt_fill_octree, this->z, 0, this->z_stretch },
+            FillContext { *adapt_fill_octree, this->z, 1, this->z_stretch },
+            FillContext { *adapt_fill_octree, this->z, 2, this->z_stretch }
         };
         // Generate the infill lines along the octree cells, merge touching lines of the same direction.
         size_t num_lines = 0;

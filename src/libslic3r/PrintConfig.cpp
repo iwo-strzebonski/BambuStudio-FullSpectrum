@@ -206,7 +206,8 @@ static t_config_enum_values s_keys_map_InfillPattern {
     { "crosslaminate",      ipCrossLaminate },
     { "schwartzp",          ipSchwartzP },
     { "hilbertcurve3d",     ipHilbertCurve3D },
-    { "voronoiorganic",     ipVoronoiOrganic }
+    { "voronoiorganic",     ipVoronoiOrganic },
+    { "cellularfoam",       ipCellularFoam }
 };
 CONFIG_OPTION_ENUM_DEFINE_STATIC_MAPS(InfillPattern)
 
@@ -2566,6 +2567,8 @@ void PrintConfigDef::init_fff_params()
     def->enum_values.push_back("crosslaminate");
     def->enum_values.push_back("schwartzp");
     def->enum_values.push_back("hilbertcurve3d");
+    def->enum_values.push_back("voronoiorganic");
+    def->enum_values.push_back("cellularfoam");
     def->enum_labels.push_back(L("Concentric"));
     def->enum_labels.push_back(L("Rectilinear"));
     def->enum_labels.push_back(L("Grid"));
@@ -2592,6 +2595,8 @@ void PrintConfigDef::init_fff_params()
     def->enum_labels.push_back(L("Cross Laminate"));
     def->enum_labels.push_back(L("Schwartz P"));
     def->enum_labels.push_back(L("Hilbert Curve 3D"));
+    def->enum_labels.push_back(L("Voronoi Organic"));
+    def->enum_labels.push_back(L("Cellular Foam"));
     def->set_default_value(new ConfigOptionEnum<InfillPattern>(ipCubic));
 
     def           = this->add("adaptive_cuboid_z_ratio", coFloat);

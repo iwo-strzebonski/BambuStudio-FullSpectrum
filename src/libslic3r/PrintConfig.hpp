@@ -58,6 +58,7 @@ enum InfillPattern : int {
     ipHilbertCurve, ipArchimedeanChords, ipOctagramSpiral, ipSupportCubic, ipSupportBase, ipConcentricInternal,
     ipLightning, ipCrossHatch, ipZigZag, ipCrossZag,ipFloatingConcentric, ipLockedZag, ip2DLattice,
     ipCrossLaminate, ipSchwartzP, ipHilbertCurve3D, ipVoronoiOrganic,
+    ipCellularFoam,
     ipCount,
 };
 

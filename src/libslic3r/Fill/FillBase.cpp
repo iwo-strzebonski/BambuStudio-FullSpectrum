@@ -29,6 +29,7 @@
 #include "FillFloatingConcentric.hpp"
 #include "FillSchwartzP.hpp"
 #include "FillVoronoiOrganic.hpp"
+#include "FillCellularFoam.hpp"
 
 // #define INFILL_DEBUG_OUTPUT
 
@@ -71,6 +72,7 @@ Fill* Fill::new_from_type(const InfillPattern type)
     case ipCrossLaminate:       return new FillCrossLaminate();
     case ipSchwartzP:           return new FillSchwartzP();
     case ipVoronoiOrganic:      return new FillVoronoiOrganic();
+    case ipCellularFoam:        return new FillCellularFoam();
     default: throw Slic3r::InvalidArgument("unknown type");
     }
 }

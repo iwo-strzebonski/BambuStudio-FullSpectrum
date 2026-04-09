@@ -117,6 +117,8 @@ set(lisbslic3r_sources
     Fill/FillSchwartzP.hpp
     Fill/FillVoronoiOrganic.cpp
     Fill/FillVoronoiOrganic.hpp
+    Fill/FillCellularFoam.cpp
+    Fill/FillCellularFoam.hpp
     Fill/FillPlanePath.cpp
     Fill/FillPlanePath.hpp
     Fill/FillHilbertCurve3D.cpp

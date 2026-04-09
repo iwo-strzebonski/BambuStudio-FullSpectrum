@@ -61,8 +61,8 @@ static double point_to_expolygon_dist_sq(const Vec2d &p_mm, const ExPolygon &exp
         const Points &pts = ring.points;
         size_t n = pts.size();
         for (size_t i = 0; i < n; ++i) {
-            Vec2d a = unscale<double>(pts[i]);
-            Vec2d b = unscale<double>(pts[(i + 1) % n]);
+            Vec2d a = unscale(pts[i]);
+            Vec2d b = unscale(pts[(i + 1) % n]);
             double d = point_segment_dist_sq(p_mm, a, b);
             if (d < dmin)
                 dmin = d;
@@ -108,7 +108,7 @@ static std::vector<Vec2d> generate_stress_seeds(
     const double jitter_x = std::cos(z * 3.7) * dense_sp * FillVoronoiOrganic::JitterAmplitude;
     const double jitter_y = std::sin(z * 2.9) * dense_sp * FillVoronoiOrganic::JitterAmplitude;
 
-    BoundingBoxf bb = BoundingBoxf(expolygon.bounding_box());
+    BoundingBoxf bb = unscaled(get_extents(expolygon));
 
     // Grid step = dense_sp (worst-case) so we don't skip any candidate.
     const double step = dense_sp;
@@ -237,7 +237,7 @@ void FillVoronoiOrganic::_fill_surface_single(
     boost::polygon::construct_voronoi(bpoints.begin(), bpoints.end(), &vd);
 
     // BoundingBoxf for infinite-edge clipping (inflated slightly).
-    BoundingBoxf bb = unscaled(expolygon.bounding_box());
+    BoundingBoxf bb = unscaled(get_extents(expolygon));
     {
         double pad = base_spacing_mm * 2.0;
         bb.min -= Vec2d(pad, pad);
